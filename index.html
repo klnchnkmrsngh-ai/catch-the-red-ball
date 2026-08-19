@@ -77,15 +77,15 @@
 
 
         /* =========================
-           BALL
+           PLAYER BALL
            ========================= */
 
         #ball {
 
             position: absolute;
 
-            width: 70px;
-            height: 70px;
+            width: 60px;
+            height: 60px;
 
             background: red;
 
@@ -94,11 +94,62 @@
             transform:
                 translate(-50%, -50%);
 
-            pointer-events: auto;
+            pointer-events: none;
+
+            box-shadow:
+                0 0 18px
+                rgba(255, 0, 0, 0.9);
+        }
+
+
+        /* =========================
+           TARGET
+           ========================= */
+
+        #target {
+
+            position: absolute;
+
+            width: 90px;
+            height: 90px;
+
+            border: 5px solid white;
+
+            border-radius: 50%;
+
+            transform:
+                translate(-50%, -50%);
+
+            pointer-events: none;
 
             box-shadow:
                 0 0 15px
-                rgba(255, 0, 0, 0.8);
+                rgba(255, 255, 255, 0.8);
+        }
+
+
+        /*
+         * Inner part of target.
+         */
+
+        #target::after {
+
+            content: "";
+
+            position: absolute;
+
+            width: 25px;
+            height: 25px;
+
+            left: 50%;
+            top: 50%;
+
+            transform:
+                translate(-50%, -50%);
+
+            background: white;
+
+            border-radius: 50%;
         }
 
 
@@ -182,17 +233,49 @@
 
 
         /* =========================
-           DEBUG INFORMATION
+           SCORE
+           ========================= */
+
+        #score {
+
+            position: absolute;
+
+            top: 85px;
+            right: 20px;
+
+            padding: 10px 15px;
+
+            background:
+                rgba(0, 0, 0, 0.7);
+
+            color: white;
+
+            font-family: Arial, sans-serif;
+
+            font-size: 20px;
+
+            font-weight: bold;
+
+            border-radius: 8px;
+
+            z-index: 30;
+
+            pointer-events: none;
+        }
+
+
+        /* =========================
+           DEBUG
            ========================= */
 
         #debug {
 
             position: absolute;
 
-            top: 75px;
+            top: 85px;
             left: 20px;
 
-            padding: 12px;
+            padding: 10px;
 
             background:
                 rgba(0, 0, 0, 0.65);
@@ -201,7 +284,7 @@
 
             font-family: monospace;
 
-            font-size: 13px;
+            font-size: 12px;
 
             line-height: 1.5;
 
@@ -237,20 +320,36 @@
 <div id="game">
 
 
-    <!-- Red ball -->
+    <!-- Player ball -->
 
     <div id="ball"></div>
+
+
+    <!-- Target -->
+
+    <div id="target"></div>
 
 
     <!-- Status -->
 
     <div id="status">
+
         Place phone flat on table,
         then press Calibrate.
+
     </div>
 
 
-    <!-- Debug information -->
+    <!-- Score -->
+
+    <div id="score">
+
+        Score: 0
+
+    </div>
+
+
+    <!-- Debug -->
 
     <div id="debug">
 
@@ -261,16 +360,6 @@
 
         Gamma:
         <span id="gamma">---</span>
-
-        <br>
-
-        Calibrated Beta:
-        <span id="calBeta">---</span>
-
-        <br>
-
-        Calibrated Gamma:
-        <span id="calGamma">---</span>
 
         <br>
 
@@ -322,9 +411,21 @@ const ball =
     );
 
 
+const target =
+    document.getElementById(
+        "target"
+    );
+
+
 const statusDisplay =
     document.getElementById(
         "status"
+    );
+
+
+const scoreDisplay =
+    document.getElementById(
+        "score"
     );
 
 
@@ -349,18 +450,6 @@ const betaDisplay =
 const gammaDisplay =
     document.getElementById(
         "gamma"
-    );
-
-
-const calBetaDisplay =
-    document.getElementById(
-        "calBeta"
-    );
-
-
-const calGammaDisplay =
-    document.getElementById(
-        "calGamma"
     );
 
 
@@ -398,65 +487,81 @@ let velocityY = 0;
 
 
 /* =========================
-   CALIBRATION
+   TARGET POSITION
    ========================= */
+
+let targetX =
+    window.innerWidth * 0.75;
+
+
+let targetY =
+    window.innerHeight * 0.5;
+
+
+/* =========================
+   SENSOR
+   ========================= */
+
+let lastBeta = null;
+
+let lastGamma = null;
 
 let calibratedBeta = null;
 
 let calibratedGamma = null;
+
+let sensorActive = false;
 
 
 /* =========================
    GAME STATE
    ========================= */
 
-let sensorActive = false;
-
 let gameStarted = false;
+
+let score = 0;
 
 
 /* =========================
-   SETTINGS
+   PHYSICS SETTINGS
    ========================= */
-
-
-/*
- * How strongly the phone tilt
- * affects the ball acceleration.
- */
 
 const acceleration =
     0.15;
 
 
-/*
- * Maximum ball speed.
- */
-
 const maxSpeed =
     8;
 
-
-/*
- * Friction.
-
- * A value below 1 gradually
- * slows the ball down.
- */
 
 const friction =
     0.92;
 
 
-/*
- * Ignore very small movements.
-
- * This prevents sensor noise
- * from moving the ball.
- */
-
 const deadZone =
     3;
+
+
+/* =========================
+   COLLISION SETTINGS
+   ========================= */
+
+const ballRadius =
+    30;
+
+
+const targetRadius =
+    45;
+
+
+/*
+ * How close the ball needs
+ * to get to the target.
+ */
+
+const catchDistance =
+    ballRadius +
+    targetRadius;
 
 
 /* =========================
@@ -507,15 +612,56 @@ async function startCamera() {
 
 
 /* =========================
+   CREATE TARGET
+   ========================= */
+
+function moveTarget() {
+
+    /*
+     * Keep the target away
+     * from the edges.
+     */
+
+    const margin = 100;
+
+
+    targetX =
+        margin +
+        Math.random() *
+        (
+            window.innerWidth -
+            margin * 2
+        );
+
+
+    targetY =
+        margin +
+        Math.random() *
+        (
+            window.innerHeight -
+            margin * 2
+        );
+
+
+    /*
+     * Move target visually.
+     */
+
+    target.style.left =
+        targetX + "px";
+
+
+    target.style.top =
+        targetY + "px";
+
+}
+
+
+/* =========================
    CALIBRATION
    ========================= */
 
 function calibrate() {
-
-    /*
-     * We can only calibrate if
-     * sensor data has arrived.
-     */
 
     if (
         lastBeta === null ||
@@ -530,10 +676,6 @@ function calibrate() {
     }
 
 
-    /*
-     * Save the current orientation.
-     */
-
     calibratedBeta =
         lastBeta;
 
@@ -541,22 +683,6 @@ function calibrate() {
     calibratedGamma =
         lastGamma;
 
-
-    /*
-     * Display calibration values.
-     */
-
-    calBetaDisplay.textContent =
-        calibratedBeta.toFixed(1);
-
-
-    calGammaDisplay.textContent =
-        calibratedGamma.toFixed(1);
-
-
-    /*
-     * Reset ball velocity.
-     */
 
     velocityX = 0;
 
@@ -571,23 +697,10 @@ function calibrate() {
 
 
 /* =========================
-   SENSOR VALUES
-   ========================= */
-
-let lastBeta = null;
-
-let lastGamma = null;
-
-
-/* =========================
-   ORIENTATION HANDLER
+   ORIENTATION
    ========================= */
 
 function handleOrientation(event) {
-
-    /*
-     * Store the latest sensor values.
-     */
 
     if (
         event.beta !== null
@@ -610,7 +723,7 @@ function handleOrientation(event) {
 
 
     /*
-     * Display the values.
+     * Display sensor values.
      */
 
     if (
@@ -634,8 +747,8 @@ function handleOrientation(event) {
 
 
     /*
-     * Don't control the ball until
-     * the game has started.
+     * Don't control ball
+     * until game starts.
      */
 
     if (
@@ -646,10 +759,6 @@ function handleOrientation(event) {
 
     }
 
-
-    /*
-     * Make sure calibration exists.
-     */
 
     if (
         calibratedBeta === null ||
@@ -662,31 +771,23 @@ function handleOrientation(event) {
 
 
     /*
-     * Calculate movement away
-     * from the calibrated position.
+     * Calculate tilt from
+     * calibrated position.
      */
 
-    const betaDifference =
-        lastBeta -
-        calibratedBeta;
-
-
-    const gammaDifference =
+    let horizontalTilt =
         lastGamma -
         calibratedGamma;
 
 
-    /* =========================
-       DEAD ZONE
-       ========================= */
-
-    let horizontalTilt =
-        gammaDifference;
-
-
     let verticalTilt =
-        betaDifference;
+        lastBeta -
+        calibratedBeta;
 
+
+    /*
+     * Dead zone.
+     */
 
     if (
         Math.abs(horizontalTilt)
@@ -708,9 +809,9 @@ function handleOrientation(event) {
     }
 
 
-    /* =========================
-       ACCELERATION
-       ========================= */
+    /*
+     * Apply acceleration.
+     */
 
     velocityX +=
         horizontalTilt *
@@ -723,7 +824,7 @@ function handleOrientation(event) {
 
 
     /*
-     * Limit maximum speed.
+     * Maximum speed.
      */
 
     velocityX =
@@ -749,86 +850,210 @@ function handleOrientation(event) {
 
 
 /* =========================
+   COLLISION DETECTION
+   ========================= */
+
+function checkCollision() {
+
+    const dx =
+        ballX -
+        targetX;
+
+
+    const dy =
+        ballY -
+        targetY;
+
+
+    /*
+     * Pythagoras:
+
+       distance =
+       sqrt(dx² + dy²)
+    */
+
+    const distance =
+        Math.sqrt(
+            dx * dx +
+            dy * dy
+        );
+
+
+    /*
+     * Have we reached
+     * the target?
+     */
+
+    if (
+        distance <
+        catchDistance
+    ) {
+
+        catchTarget();
+
+    }
+
+}
+
+
+/* =========================
+   TARGET CAUGHT
+   ========================= */
+
+function catchTarget() {
+
+    /*
+     * Increase score.
+     */
+
+    score++;
+
+
+    scoreDisplay.textContent =
+        "Score: " +
+        score;
+
+
+    /*
+     * Stop the ball briefly.
+     */
+
+    velocityX = 0;
+
+    velocityY = 0;
+
+
+    /*
+     * Move target.
+     */
+
+    moveTarget();
+
+
+    /*
+     * Show feedback.
+     */
+
+    statusDisplay.textContent =
+        "CAUGHT! 🎯";
+
+
+    /*
+     * Return to normal message.
+     */
+
+    setTimeout(
+        function() {
+
+            if (gameStarted) {
+
+                statusDisplay.textContent =
+                    "Find the next target!";
+
+            }
+
+        },
+        700
+    );
+
+}
+
+
+/* =========================
    BALL PHYSICS
    ========================= */
 
 function updateBall() {
 
     /*
-     * Apply velocity.
+     * Move according to
+     * velocity.
      */
 
-    ballX += velocityX;
+    ballX +=
+        velocityX;
 
-    ballY += velocityY;
+
+    ballY +=
+        velocityY;
 
 
     /*
      * Apply friction.
      */
 
-    velocityX *= friction;
+    velocityX *=
+        friction;
 
-    velocityY *= friction;
+
+    velocityY *=
+        friction;
 
 
     /*
      * Keep ball inside screen.
      */
 
-    const radius = 35;
-
-
     if (
-        ballX < radius
+        ballX < ballRadius
     ) {
 
-        ballX = radius;
+        ballX =
+            ballRadius;
 
-        velocityX *= -0.5;
+        velocityX *=
+            -0.5;
 
     }
 
 
     if (
         ballX >
-        window.innerWidth - radius
+        window.innerWidth -
+        ballRadius
     ) {
 
         ballX =
-            window.innerWidth - radius;
+            window.innerWidth -
+            ballRadius;
 
-        velocityX *= -0.5;
+        velocityX *=
+            -0.5;
 
     }
 
 
     if (
-        ballY < radius
+        ballY < ballRadius
     ) {
 
-        ballY = radius;
+        ballY =
+            ballRadius;
 
-        velocityY *= -0.5;
+        velocityY *=
+            -0.5;
 
     }
 
 
     if (
         ballY >
-        window.innerHeight - radius
+        window.innerHeight -
+        ballRadius
     ) {
 
         ballY =
-            window.innerHeight - radius;
+            window.innerHeight -
+            ballRadius;
 
-        velocityY *= -0.5;
+        velocityY *=
+            -0.5;
 
     }
 
 
     /*
-     * Update HTML position.
+     * Update ball position.
      */
 
     ball.style.left =
@@ -840,7 +1065,7 @@ function updateBall() {
 
 
     /*
-     * Display velocity.
+     * Debug display.
      */
 
     velocityXDisplay.textContent =
@@ -850,16 +1075,26 @@ function updateBall() {
     velocityYDisplay.textContent =
         velocityY.toFixed(2);
 
+
+    /*
+     * Check whether ball
+     * reached target.
+     */
+
+    checkCollision();
+
 }
 
 
 /* =========================
-   ANIMATION LOOP
+   GAME LOOP
    ========================= */
 
 function gameLoop() {
 
-    if (gameStarted) {
+    if (
+        gameStarted
+    ) {
 
         updateBall();
 
@@ -873,10 +1108,6 @@ function gameLoop() {
 }
 
 
-/*
- * Start animation loop.
- */
-
 gameLoop();
 
 
@@ -887,8 +1118,7 @@ gameLoop();
 async function startSensors() {
 
     /*
-     * iPhone Safari requires
-     * explicit permission.
+     * iPhone Safari.
      */
 
     if (
@@ -917,7 +1147,8 @@ async function startSensors() {
                     handleOrientation
                 );
 
-                sensorActive = true;
+                sensorActive =
+                    true;
 
                 return true;
 
@@ -951,8 +1182,7 @@ async function startSensors() {
 
 
     /*
-     * Browsers that don't require
-     * explicit permission.
+     * Other browsers.
      */
 
     window.addEventListener(
@@ -961,7 +1191,9 @@ async function startSensors() {
     );
 
 
-    sensorActive = true;
+    sensorActive =
+        true;
+
 
     return true;
 
@@ -983,7 +1215,7 @@ calibrateButton.addEventListener(
 
 
 /* =========================
-   START BUTTON
+   START GAME BUTTON
    ========================= */
 
 startButton.addEventListener(
@@ -992,17 +1224,20 @@ startButton.addEventListener(
 
 
         /*
-         * Make sure we have
-         * sensor permission.
+         * Start sensors.
          */
 
-        if (!sensorActive) {
+        if (
+            !sensorActive
+        ) {
 
             const success =
                 await startSensors();
 
 
-            if (!success) {
+            if (
+                !success
+            ) {
 
                 return;
 
@@ -1012,8 +1247,8 @@ startButton.addEventListener(
 
 
         /*
-         * We need calibration
-         * before starting.
+         * Make sure we have
+         * calibration.
          */
 
         if (
@@ -1037,29 +1272,56 @@ startButton.addEventListener(
 
 
         /*
-         * Start game.
+         * Reset ball.
          */
 
-        gameStarted = true;
+        ballX =
+            window.innerWidth / 2;
 
 
-        /*
-         * Reset velocity.
-         */
+        ballY =
+            window.innerHeight / 2;
+
 
         velocityX = 0;
 
         velocityY = 0;
 
 
-        statusDisplay.textContent =
-            "Game started! Pick up the phone.";
+        /*
+         * Reset score.
+         */
+
+        score = 0;
+
+
+        scoreDisplay.textContent =
+            "Score: 0";
 
 
         /*
-         * Disable calibration while
-         * game is running.
+         * Create first target.
          */
+
+        moveTarget();
+
+
+        /*
+         * Start game.
+
+         */
+
+        gameStarted =
+            true;
+
+
+        /*
+         * Update UI.
+         */
+
+        statusDisplay.textContent =
+            "Find the target!";
+
 
         calibrateButton.disabled =
             true;
@@ -1073,7 +1335,7 @@ startButton.addEventListener(
 
 
 /* =========================
-   INITIAL BALL POSITION
+   INITIAL POSITIONS
    ========================= */
 
 ball.style.left =
@@ -1083,6 +1345,8 @@ ball.style.left =
 ball.style.top =
     ballY + "px";
 
+
+moveTarget();
 
 </script>
 
