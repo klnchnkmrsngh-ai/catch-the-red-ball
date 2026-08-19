@@ -11,7 +11,7 @@
                    maximum-scale=1.0,
                    user-scalable=no">
 
-    <title>Sensor Test</title>
+    <title>iPhone Sensor Test</title>
 
     <style>
 
@@ -28,12 +28,15 @@
             color: white;
 
             font-family: Arial, sans-serif;
-
-            overflow: hidden;
         }
 
+
         #camera {
+
             position: fixed;
+
+            top: 0;
+            left: 0;
 
             width: 100%;
             height: 100%;
@@ -43,7 +46,9 @@
             z-index: 1;
         }
 
+
         #overlay {
+
             position: fixed;
 
             top: 0;
@@ -59,24 +64,11 @@
             pointer-events: none;
         }
 
-        #startButton {
-            position: absolute;
-
-            left: 50%;
-            top: 50%;
-
-            transform: translate(-50%, -50%);
-
-            padding: 20px 30px;
-
-            font-size: 20px;
-
-            pointer-events: auto;
-        }
 
         #sensorDisplay {
 
-            background: rgba(0, 0, 0, 0.75);
+            background:
+                rgba(0, 0, 0, 0.75);
 
             padding: 15px;
 
@@ -87,7 +79,24 @@
             font-size: 18px;
 
             line-height: 1.6;
+        }
 
+
+        #startButton {
+
+            position: absolute;
+
+            left: 50%;
+            top: 50%;
+
+            transform:
+                translate(-50%, -50%);
+
+            padding: 20px 30px;
+
+            font-size: 20px;
+
+            pointer-events: auto;
         }
 
     </style>
@@ -106,10 +115,12 @@
 
 <div id="overlay">
 
+
     <div id="sensorDisplay">
 
-        Sensor status: <span id="status">
-            Waiting...
+        Status:
+        <span id="status">
+            Waiting
         </span>
 
         <br><br>
@@ -127,12 +138,18 @@
         Gamma:
         <span id="gamma">---</span>
 
+        <br><br>
+
+        Error:
+        <span id="error">---</span>
+
     </div>
 
 
     <button id="startButton">
         Start Sensor Test
     </button>
+
 
 </div>
 
@@ -141,70 +158,55 @@
 
 
 const camera =
-    document.getElementById("camera");
+    document.getElementById(
+        "camera"
+    );
+
 
 const startButton =
-    document.getElementById("startButton");
+    document.getElementById(
+        "startButton"
+    );
+
 
 const status =
-    document.getElementById("status");
+    document.getElementById(
+        "status"
+    );
+
+
+const errorDisplay =
+    document.getElementById(
+        "error"
+    );
+
 
 const alphaDisplay =
-    document.getElementById("alpha");
+    document.getElementById(
+        "alpha"
+    );
+
 
 const betaDisplay =
-    document.getElementById("beta");
+    document.getElementById(
+        "beta"
+    );
+
 
 const gammaDisplay =
-    document.getElementById("gamma");
+    document.getElementById(
+        "gamma"
+    );
 
 
 /* -------------------------
-   CAMERA
+   SENSOR DATA
    ------------------------- */
 
-async function startCamera() {
-
-    try {
-
-        const stream =
-            await navigator.mediaDevices
-                .getUserMedia({
-
-                    video: {
-                        facingMode: {
-                            ideal: "environment"
-                        }
-                    },
-
-                    audio: false
-
-                });
-
-        camera.srcObject = stream;
-
-    }
-
-    catch (error) {
-
-        status.textContent =
-            "Camera error";
-
-        console.error(error);
-
-    }
-
-}
-
-
-/* -------------------------
-   SENSOR EVENT
-   ------------------------- */
-
-function orientationHandler(event) {
+function handleOrientation(event) {
 
     status.textContent =
-        "Sensor events received";
+        "Sensor working";
 
 
     alphaDisplay.textContent =
@@ -235,33 +237,40 @@ startButton.addEventListener(
     "click",
     async function() {
 
+
         startButton.style.display =
             "none";
 
 
-        status.textContent =
-            "Starting camera...";
-
-
-        await startCamera();
-
+        /*
+         * FIRST:
+         * Request motion permission.
+         */
 
         status.textContent =
             "Requesting motion permission...";
 
 
+        if (
+            typeof DeviceOrientationEvent ===
+            "undefined"
+        ) {
+
+            status.textContent =
+                "DeviceOrientationEvent not supported";
+
+            return;
+        }
+
+
         /*
-         * iPhone/iPad Safari requires
-         * permission to use motion sensors.
+         * iPhone Safari
          */
 
         if (
-            typeof DeviceOrientationEvent !==
-            "undefined" &&
-
             typeof DeviceOrientationEvent
                 .requestPermission ===
-                "function"
+            "function"
         ) {
 
             try {
@@ -271,15 +280,18 @@ startButton.addEventListener(
                         .requestPermission();
 
 
-                if (permission === "granted") {
+                if (
+                    permission ===
+                    "granted"
+                ) {
 
                     status.textContent =
-                        "Permission granted. Waiting for sensor...";
+                        "Motion permission granted";
 
 
                     window.addEventListener(
                         "deviceorientation",
-                        orientationHandler
+                        handleOrientation
                     );
 
                 }
@@ -287,18 +299,23 @@ startButton.addEventListener(
                 else {
 
                     status.textContent =
-                        "Motion permission DENIED";
+                        "Permission denied";
 
                 }
 
             }
 
-            catch (error) {
+            catch (err) {
 
                 status.textContent =
-                    "Permission error";
+                    "Permission request failed";
 
-                console.error(error);
+                errorDisplay.textContent =
+                    err.name +
+                    ": " +
+                    err.message;
+
+                console.error(err);
 
             }
 
@@ -307,17 +324,56 @@ startButton.addEventListener(
         else {
 
             /*
-             * Browsers that don't require
-             * an explicit permission request.
+             * Non-iPhone browsers.
              */
 
             status.textContent =
-                "Listening for sensor...";
+                "Listening for sensor";
 
 
             window.addEventListener(
                 "deviceorientation",
-                orientationHandler
+                handleOrientation
+            );
+
+        }
+
+
+        /*
+         * SECOND:
+         * Start the camera separately.
+         */
+
+        try {
+
+            const stream =
+                await navigator.mediaDevices
+                    .getUserMedia({
+
+                        video: {
+
+                            facingMode: {
+                                ideal:
+                                    "environment"
+                            }
+
+                        },
+
+                        audio: false
+
+                    });
+
+
+            camera.srcObject =
+                stream;
+
+        }
+
+        catch (err) {
+
+            console.error(
+                "Camera error:",
+                err
             );
 
         }
