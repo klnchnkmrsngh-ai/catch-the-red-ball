@@ -36,9 +36,9 @@
         }
 
 
-        /* -------------------------
+        /* =========================
            CAMERA
-           ------------------------- */
+           ========================= */
 
         #camera {
 
@@ -56,9 +56,9 @@
         }
 
 
-        /* -------------------------
-           GAME OVERLAY
-           ------------------------- */
+        /* =========================
+           GAME
+           ========================= */
 
         #game {
 
@@ -76,9 +76,9 @@
         }
 
 
-        /* -------------------------
-           RED BALL
-           ------------------------- */
+        /* =========================
+           BALL
+           ========================= */
 
         #ball {
 
@@ -102,39 +102,94 @@
         }
 
 
-        /* -------------------------
-           START BUTTON
-           ------------------------- */
+        /* =========================
+           CONTROLS
+           ========================= */
 
-        #startButton {
+        #controls {
 
             position: absolute;
 
+            bottom: 30px;
             left: 50%;
-            top: 50%;
 
             transform:
-                translate(-50%, -50%);
+                translateX(-50%);
 
-            padding: 15px 25px;
+            display: flex;
 
-            font-size: 20px;
+            gap: 10px;
 
-            z-index: 10;
+            z-index: 30;
 
             pointer-events: auto;
         }
 
 
-        /* -------------------------
-           SENSOR DISPLAY
-           ------------------------- */
+        button {
 
-        #sensorDisplay {
+            padding: 12px 18px;
+
+            font-size: 16px;
+
+            border: none;
+
+            border-radius: 8px;
+
+            background: white;
+
+            color: black;
+        }
+
+
+        button:disabled {
+
+            opacity: 0.5;
+        }
+
+
+        /* =========================
+           STATUS
+           ========================= */
+
+        #status {
 
             position: absolute;
 
             top: 20px;
+            left: 20px;
+            right: 20px;
+
+            padding: 12px;
+
+            background:
+                rgba(0, 0, 0, 0.7);
+
+            color: white;
+
+            font-family: Arial, sans-serif;
+
+            font-size: 16px;
+
+            border-radius: 8px;
+
+            z-index: 30;
+
+            pointer-events: none;
+
+            text-align: center;
+        }
+
+
+        /* =========================
+           DEBUG INFORMATION
+           ========================= */
+
+        #debug {
+
+            position: absolute;
+
+            top: 75px;
             left: 20px;
 
             padding: 12px;
@@ -146,13 +201,13 @@
 
             font-family: monospace;
 
-            font-size: 15px;
+            font-size: 13px;
 
             line-height: 1.5;
 
             border-radius: 8px;
 
-            z-index: 20;
+            z-index: 30;
 
             pointer-events: none;
         }
@@ -187,21 +242,17 @@
     <div id="ball"></div>
 
 
-    <!-- Start button -->
+    <!-- Status -->
 
-    <button id="startButton">
-        Start Game
-    </button>
+    <div id="status">
+        Place phone flat on table,
+        then press Calibrate.
+    </div>
 
 
-    <!-- Sensor information -->
+    <!-- Debug information -->
 
-    <div id="sensorDisplay">
-
-        Alpha:
-        <span id="alpha">---</span>
-
-        <br>
+    <div id="debug">
 
         Beta:
         <span id="beta">---</span>
@@ -211,15 +262,40 @@
         Gamma:
         <span id="gamma">---</span>
 
-        <br><br>
+        <br>
 
-        Ball X:
-        <span id="ballX">---</span>
+        Calibrated Beta:
+        <span id="calBeta">---</span>
 
         <br>
 
-        Ball Y:
-        <span id="ballY">---</span>
+        Calibrated Gamma:
+        <span id="calGamma">---</span>
+
+        <br>
+
+        Velocity X:
+        <span id="velocityX">0</span>
+
+        <br>
+
+        Velocity Y:
+        <span id="velocityY">0</span>
+
+    </div>
+
+
+    <!-- Controls -->
+
+    <div id="controls">
+
+        <button id="calibrateButton">
+            Calibrate
+        </button>
+
+        <button id="startButton">
+            Start Game
+        </button>
 
     </div>
 
@@ -246,15 +322,21 @@ const ball =
     );
 
 
-const startButton =
+const statusDisplay =
     document.getElementById(
-        "startButton"
+        "status"
     );
 
 
-const alphaDisplay =
+const calibrateButton =
     document.getElementById(
-        "alpha"
+        "calibrateButton"
+    );
+
+
+const startButton =
+    document.getElementById(
+        "startButton"
     );
 
 
@@ -270,26 +352,33 @@ const gammaDisplay =
     );
 
 
-const ballXDisplay =
+const calBetaDisplay =
     document.getElementById(
-        "ballX"
+        "calBeta"
     );
 
 
-const ballYDisplay =
+const calGammaDisplay =
     document.getElementById(
-        "ballY"
+        "calGamma"
+    );
+
+
+const velocityXDisplay =
+    document.getElementById(
+        "velocityX"
+    );
+
+
+const velocityYDisplay =
+    document.getElementById(
+        "velocityY"
     );
 
 
 /* =========================
    BALL POSITION
    ========================= */
-
-/*
- * Start the ball in the
- * middle of the screen.
- */
 
 let ballX =
     window.innerWidth / 2;
@@ -299,27 +388,75 @@ let ballY =
     window.innerHeight / 2;
 
 
-/*
- * How strongly the phone
- * movement affects the ball.
- */
+/* =========================
+   BALL VELOCITY
+   ========================= */
 
-const sensitivity = 5;
+let velocityX = 0;
+
+let velocityY = 0;
 
 
 /* =========================
-   STARTING ORIENTATION
+   CALIBRATION
    ========================= */
 
+let calibratedBeta = null;
+
+let calibratedGamma = null;
+
+
+/* =========================
+   GAME STATE
+   ========================= */
+
+let sensorActive = false;
+
+let gameStarted = false;
+
+
+/* =========================
+   SETTINGS
+   ========================= */
+
+
 /*
- * When the game starts,
- * we'll remember the phone's
- * current orientation.
+ * How strongly the phone tilt
+ * affects the ball acceleration.
  */
 
-let startingBeta = null;
+const acceleration =
+    0.15;
 
-let startingGamma = null;
+
+/*
+ * Maximum ball speed.
+ */
+
+const maxSpeed =
+    8;
+
+
+/*
+ * Friction.
+
+ * A value below 1 gradually
+ * slows the ball down.
+ */
+
+const friction =
+    0.92;
+
+
+/*
+ * Ignore very small movements.
+
+ * This prevents sensor noise
+ * from moving the ball.
+ */
+
+const deadZone =
+    3;
 
 
 /* =========================
@@ -360,12 +497,9 @@ async function startCamera() {
             error
         );
 
-        alert(
-            "Could not access camera.\n\n" +
-            error.name +
-            "\n\n" +
-            error.message
-        );
+        statusDisplay.textContent =
+            "Camera error: " +
+            error.message;
 
     }
 
@@ -373,22 +507,285 @@ async function startCamera() {
 
 
 /* =========================
-   UPDATE BALL
+   CALIBRATION
+   ========================= */
+
+function calibrate() {
+
+    /*
+     * We can only calibrate if
+     * sensor data has arrived.
+     */
+
+    if (
+        lastBeta === null ||
+        lastGamma === null
+    ) {
+
+        statusDisplay.textContent =
+            "Waiting for sensor data...";
+
+        return;
+
+    }
+
+
+    /*
+     * Save the current orientation.
+     */
+
+    calibratedBeta =
+        lastBeta;
+
+
+    calibratedGamma =
+        lastGamma;
+
+
+    /*
+     * Display calibration values.
+     */
+
+    calBetaDisplay.textContent =
+        calibratedBeta.toFixed(1);
+
+
+    calGammaDisplay.textContent =
+        calibratedGamma.toFixed(1);
+
+
+    /*
+     * Reset ball velocity.
+     */
+
+    velocityX = 0;
+
+    velocityY = 0;
+
+
+    statusDisplay.textContent =
+        "Calibration complete. " +
+        "Press Start Game.";
+
+}
+
+
+/* =========================
+   SENSOR VALUES
+   ========================= */
+
+let lastBeta = null;
+
+let lastGamma = null;
+
+
+/* =========================
+   ORIENTATION HANDLER
+   ========================= */
+
+function handleOrientation(event) {
+
+    /*
+     * Store the latest sensor values.
+     */
+
+    if (
+        event.beta !== null
+    ) {
+
+        lastBeta =
+            event.beta;
+
+    }
+
+
+    if (
+        event.gamma !== null
+    ) {
+
+        lastGamma =
+            event.gamma;
+
+    }
+
+
+    /*
+     * Display the values.
+     */
+
+    if (
+        lastBeta !== null
+    ) {
+
+        betaDisplay.textContent =
+            lastBeta.toFixed(1);
+
+    }
+
+
+    if (
+        lastGamma !== null
+    ) {
+
+        gammaDisplay.textContent =
+            lastGamma.toFixed(1);
+
+    }
+
+
+    /*
+     * Don't control the ball until
+     * the game has started.
+     */
+
+    if (
+        !gameStarted
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+     * Make sure calibration exists.
+     */
+
+    if (
+        calibratedBeta === null ||
+        calibratedGamma === null
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+     * Calculate movement away
+     * from the calibrated position.
+     */
+
+    const betaDifference =
+        lastBeta -
+        calibratedBeta;
+
+
+    const gammaDifference =
+        lastGamma -
+        calibratedGamma;
+
+
+    /* =========================
+       DEAD ZONE
+       ========================= */
+
+    let horizontalTilt =
+        gammaDifference;
+
+
+    let verticalTilt =
+        betaDifference;
+
+
+    if (
+        Math.abs(horizontalTilt)
+        < deadZone
+    ) {
+
+        horizontalTilt = 0;
+
+    }
+
+
+    if (
+        Math.abs(verticalTilt)
+        < deadZone
+    ) {
+
+        verticalTilt = 0;
+
+    }
+
+
+    /* =========================
+       ACCELERATION
+       ========================= */
+
+    velocityX +=
+        horizontalTilt *
+        acceleration;
+
+
+    velocityY +=
+        verticalTilt *
+        acceleration;
+
+
+    /*
+     * Limit maximum speed.
+     */
+
+    velocityX =
+        Math.max(
+            -maxSpeed,
+            Math.min(
+                maxSpeed,
+                velocityX
+            )
+        );
+
+
+    velocityY =
+        Math.max(
+            -maxSpeed,
+            Math.min(
+                maxSpeed,
+                velocityY
+            )
+        );
+
+}
+
+
+/* =========================
+   BALL PHYSICS
    ========================= */
 
 function updateBall() {
 
     /*
-     * Keep the ball inside
-     * the screen.
+     * Apply velocity.
+     */
+
+    ballX += velocityX;
+
+    ballY += velocityY;
+
+
+    /*
+     * Apply friction.
+     */
+
+    velocityX *= friction;
+
+    velocityY *= friction;
+
+
+    /*
+     * Keep ball inside screen.
      */
 
     const radius = 35;
 
 
-    if (ballX < radius) {
+    if (
+        ballX < radius
+    ) {
 
         ballX = radius;
+
+        velocityX *= -0.5;
 
     }
 
@@ -401,12 +798,18 @@ function updateBall() {
         ballX =
             window.innerWidth - radius;
 
+        velocityX *= -0.5;
+
     }
 
 
-    if (ballY < radius) {
+    if (
+        ballY < radius
+    ) {
 
         ballY = radius;
+
+        velocityY *= -0.5;
 
     }
 
@@ -419,11 +822,13 @@ function updateBall() {
         ballY =
             window.innerHeight - radius;
 
+        velocityY *= -0.5;
+
     }
 
 
     /*
-     * Move the HTML ball.
+     * Update HTML position.
      */
 
     ball.style.left =
@@ -435,151 +840,150 @@ function updateBall() {
 
 
     /*
-     * Display position.
+     * Display velocity.
      */
 
-    ballXDisplay.textContent =
-        Math.round(ballX);
+    velocityXDisplay.textContent =
+        velocityX.toFixed(2);
 
 
-    ballYDisplay.textContent =
-        Math.round(ballY);
+    velocityYDisplay.textContent =
+        velocityY.toFixed(2);
 
 }
 
 
 /* =========================
-   ORIENTATION
+   ANIMATION LOOP
    ========================= */
 
-function handleOrientation(event) {
+function gameLoop() {
 
-    /*
-     * Read sensor values.
-     */
+    if (gameStarted) {
 
-    const alpha =
-        event.alpha;
-
-
-    const beta =
-        event.beta;
-
-
-    const gamma =
-        event.gamma;
-
-
-    /*
-     * Display raw values.
-     */
-
-    if (alpha !== null) {
-
-        alphaDisplay.textContent =
-            alpha.toFixed(1);
+        updateBall();
 
     }
 
 
-    if (beta !== null) {
+    requestAnimationFrame(
+        gameLoop
+    );
 
-        betaDisplay.textContent =
-            beta.toFixed(1);
-
-    }
+}
 
 
-    if (gamma !== null) {
+/*
+ * Start animation loop.
+ */
 
-        gammaDisplay.textContent =
-            gamma.toFixed(1);
+gameLoop();
 
-    }
 
+/* =========================
+   START SENSOR
+   ========================= */
+
+async function startSensors() {
 
     /*
-     * We need beta and gamma
-     * to control the ball.
+     * iPhone Safari requires
+     * explicit permission.
      */
 
     if (
-        beta === null ||
-        gamma === null
+        typeof DeviceOrientationEvent !==
+        "undefined" &&
+
+        typeof DeviceOrientationEvent
+            .requestPermission ===
+        "function"
     ) {
 
-        return;
+        try {
+
+            const permission =
+                await DeviceOrientationEvent
+                    .requestPermission();
+
+
+            if (
+                permission ===
+                "granted"
+            ) {
+
+                window.addEventListener(
+                    "deviceorientation",
+                    handleOrientation
+                );
+
+                sensorActive = true;
+
+                return true;
+
+            }
+
+            else {
+
+                statusDisplay.textContent =
+                    "Motion permission denied.";
+
+                return false;
+
+            }
+
+        }
+
+        catch (error) {
+
+            console.error(
+                error
+            );
+
+            statusDisplay.textContent =
+                "Motion permission error.";
+
+            return false;
+
+        }
 
     }
 
 
     /*
-     * Remember the phone's
-     * starting orientation.
+     * Browsers that don't require
+     * explicit permission.
      */
 
-    if (
-        startingBeta === null
-    ) {
-
-        startingBeta = beta;
-
-    }
+    window.addEventListener(
+        "deviceorientation",
+        handleOrientation
+    );
 
 
-    if (
-        startingGamma === null
-    ) {
+    sensorActive = true;
 
-        startingGamma = gamma;
-
-    }
-
-
-    /*
-     * Calculate how far the
-     * phone has moved from
-     * its starting position.
-     */
-
-    const betaChange =
-        beta - startingBeta;
-
-
-    const gammaChange =
-        gamma - startingGamma;
-
-
-    /*
-     * Move the ball.
-     *
-     * Gamma controls X.
-     * Beta controls Y.
-     */
-
-    ballX =
-        window.innerWidth / 2
-        +
-        gammaChange * sensitivity;
-
-
-    ballY =
-        window.innerHeight / 2
-        +
-        betaChange * sensitivity;
-
-
-    /*
-     * Apply the new position.
-     */
-
-    updateBall();
+    return true;
 
 }
 
 
 /* =========================
-   START GAME
+   CALIBRATE BUTTON
+   ========================= */
+
+calibrateButton.addEventListener(
+    "click",
+    function() {
+
+        calibrate();
+
+    }
+);
+
+
+/* =========================
+   START BUTTON
    ========================= */
 
 startButton.addEventListener(
@@ -588,11 +992,41 @@ startButton.addEventListener(
 
 
         /*
-         * Hide button.
+         * Make sure we have
+         * sensor permission.
          */
 
-        startButton.style.display =
-            "none";
+        if (!sensorActive) {
+
+            const success =
+                await startSensors();
+
+
+            if (!success) {
+
+                return;
+
+            }
+
+        }
+
+
+        /*
+         * We need calibration
+         * before starting.
+         */
+
+        if (
+            calibratedBeta === null ||
+            calibratedGamma === null
+        ) {
+
+            statusDisplay.textContent =
+                "Please calibrate first.";
+
+            return;
+
+        }
 
 
         /*
@@ -603,121 +1037,51 @@ startButton.addEventListener(
 
 
         /*
-         * Request orientation
-         * permission.
+         * Start game.
          */
 
-        if (
-            typeof DeviceOrientationEvent !==
-            "undefined"
-        ) {
-
-
-            /*
-             * iPhone Safari.
-             */
-
-            if (
-                typeof DeviceOrientationEvent
-                    .requestPermission ===
-                "function"
-            ) {
-
-                try {
-
-                    const permission =
-                        await
-                        DeviceOrientationEvent
-                            .requestPermission();
-
-
-                    if (
-                        permission ===
-                        "granted"
-                    ) {
-
-                        window.addEventListener(
-                            "deviceorientation",
-                            handleOrientation
-                        );
-
-                    }
-
-                    else {
-
-                        alert(
-                            "Motion permission was not granted."
-                        );
-
-                    }
-
-                }
-
-                catch (error) {
-
-                    console.error(
-                        "Motion permission error:",
-                        error
-                    );
-
-                    alert(
-                        "Motion permission error:\n\n" +
-                        error.name +
-                        "\n" +
-                        error.message
-                    );
-
-                }
-
-            }
-
-            /*
-             * Other browsers.
-             */
-
-            else {
-
-                window.addEventListener(
-                    "deviceorientation",
-                    handleOrientation
-                );
-
-            }
-
-        }
-
-        else {
-
-            alert(
-                "Device orientation is not supported."
-            );
-
-        }
+        gameStarted = true;
 
 
         /*
-         * Start ball in centre.
+         * Reset velocity.
          */
 
-        ballX =
-            window.innerWidth / 2;
+        velocityX = 0;
+
+        velocityY = 0;
 
 
-        ballY =
-            window.innerHeight / 2;
+        statusDisplay.textContent =
+            "Game started! Pick up the phone.";
 
 
-        updateBall();
+        /*
+         * Disable calibration while
+         * game is running.
+         */
+
+        calibrateButton.disabled =
+            true;
+
+
+        startButton.disabled =
+            true;
 
     }
 );
 
 
 /* =========================
-   INITIAL POSITION
+   INITIAL BALL POSITION
    ========================= */
 
-updateBall();
+ball.style.left =
+    ballX + "px";
+
+
+ball.style.top =
+    ballY + "px";
 
 
 </script>
