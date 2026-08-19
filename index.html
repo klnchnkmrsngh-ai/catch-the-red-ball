@@ -125,6 +125,10 @@
             box-shadow:
                 0 0 15px
                 rgba(255, 255, 255, 0.8);
+
+            animation:
+                targetPulse 1.2s
+                infinite;
         }
 
 
@@ -146,6 +150,33 @@
             background: white;
 
             border-radius: 50%;
+        }
+
+
+        /* =========================
+           TARGET ANIMATION
+           ========================= */
+
+        @keyframes targetPulse {
+
+            0% {
+                transform:
+                    translate(-50%, -50%)
+                    scale(1);
+            }
+
+            50% {
+                transform:
+                    translate(-50%, -50%)
+                    scale(1.08);
+            }
+
+            100% {
+                transform:
+                    translate(-50%, -50%)
+                    scale(1);
+            }
+
         }
 
 
@@ -210,7 +241,7 @@
             padding: 12px;
 
             background:
-                rgba(0, 0, 0, 0.7);
+                rgba(0, 0, 0, 0.65);
 
             color: white;
 
@@ -242,7 +273,7 @@
             padding: 10px 15px;
 
             background:
-                rgba(0, 0, 0, 0.7);
+                rgba(0, 0, 0, 0.65);
 
             color: white;
 
@@ -261,20 +292,48 @@
 
 
         /* =========================
-           DEBUG
+           DEBUG BUTTON
+           ========================= */
+
+        #debugButton {
+
+            position: absolute;
+
+            top: 20px;
+            left: 20px;
+
+            padding: 8px 12px;
+
+            font-size: 13px;
+
+            z-index: 40;
+
+            pointer-events: auto;
+
+            background:
+                rgba(0, 0, 0, 0.65);
+
+            color: white;
+
+            border: 1px solid white;
+        }
+
+
+        /* =========================
+           DEBUG PANEL
            ========================= */
 
         #debug {
 
             position: absolute;
 
-            top: 85px;
+            top: 65px;
             left: 20px;
 
             padding: 10px;
 
             background:
-                rgba(0, 0, 0, 0.65);
+                rgba(0, 0, 0, 0.75);
 
             color: white;
 
@@ -286,9 +345,22 @@
 
             border-radius: 8px;
 
-            z-index: 30;
+            z-index: 35;
 
             pointer-events: none;
+
+            display: none;
+        }
+
+
+        /* =========================
+           HIDDEN
+           ========================= */
+
+        .hidden {
+
+            display: none !important;
+
         }
 
     </style>
@@ -316,7 +388,7 @@
 <div id="game">
 
 
-    <!-- Player ball -->
+    <!-- Red player ball -->
 
     <div id="ball"></div>
 
@@ -345,7 +417,16 @@
     </div>
 
 
-    <!-- Debug -->
+    <!-- Debug button -->
+
+    <button id="debugButton">
+
+        Debug
+
+    </button>
+
+
+    <!-- Debug information -->
 
     <div id="debug">
 
@@ -447,6 +528,18 @@ const startButton =
     );
 
 
+const debugButton =
+    document.getElementById(
+        "debugButton"
+    );
+
+
+const debugPanel =
+    document.getElementById(
+        "debug"
+    );
+
+
 const betaDisplay =
     document.getElementById(
         "beta"
@@ -526,25 +619,14 @@ let calibratedBeta = null;
 
 let calibratedGamma = null;
 
-
-/*
- * Has the orientation listener
- * already been started?
- */
-
 let sensorActive = false;
 
 
-/*
- * Has the game started?
- */
+/* =========================
+   GAME STATE
+   ========================= */
 
 let gameStarted = false;
-
-
-/*
- * Score.
- */
 
 let score = 0;
 
@@ -579,6 +661,41 @@ const targetRadius =
 const catchDistance =
     ballRadius +
     targetRadius;
+
+
+/* =========================
+   DEBUG BUTTON
+   ========================= */
+
+debugButton.addEventListener(
+    "click",
+    function() {
+
+        if (
+            debugPanel.style.display ===
+            "block"
+        ) {
+
+            debugPanel.style.display =
+                "none";
+
+            debugButton.textContent =
+                "Debug";
+
+        }
+
+        else {
+
+            debugPanel.style.display =
+                "block";
+
+            debugButton.textContent =
+                "Hide Debug";
+
+        }
+
+    }
+);
 
 
 /* =========================
@@ -641,13 +758,9 @@ async function startCamera() {
 
 async function startSensors() {
 
-    /*
-     * If the sensor is already
-     * active, don't add another
-     * event listener.
-     */
-
-    if (sensorActive) {
+    if (
+        sensorActive
+    ) {
 
         return true;
 
@@ -708,11 +821,6 @@ async function startSensors() {
     }
 
 
-    /*
-     * Start receiving orientation
-     * data.
-     */
-
     window.addEventListener(
         "deviceorientation",
         handleOrientation
@@ -725,7 +833,7 @@ async function startSensors() {
 
     statusDisplay.textContent =
         "Sensor active. " +
-        "Calibrating...";
+        "Hold phone still...";
 
 
     return true;
@@ -734,14 +842,10 @@ async function startSensors() {
 
 
 /* =========================
-   ORIENTATION HANDLER
+   ORIENTATION
    ========================= */
 
 function handleOrientation(event) {
-
-    /*
-     * Store sensor values.
-     */
 
     if (
         event.beta !== null
@@ -764,7 +868,8 @@ function handleOrientation(event) {
 
 
     /*
-     * Display values.
+     * Debug values.
+
      */
 
     if (
@@ -788,8 +893,8 @@ function handleOrientation(event) {
 
 
     /*
-     * Don't control the ball
-     * until the game starts.
+     * Don't control ball
+     * until game starts.
      */
 
     if (
@@ -801,10 +906,6 @@ function handleOrientation(event) {
     }
 
 
-    /*
-     * Need calibration first.
-     */
-
     if (
         calibratedBeta === null ||
         calibratedGamma === null
@@ -814,11 +915,6 @@ function handleOrientation(event) {
 
     }
 
-
-    /*
-     * Calculate tilt from
-     * calibrated orientation.
-     */
 
     let horizontalTilt =
         lastGamma -
@@ -869,7 +965,7 @@ function handleOrientation(event) {
 
 
     /*
-     * Limit maximum speed.
+     * Limit speed.
      */
 
     velocityX =
@@ -895,14 +991,13 @@ function handleOrientation(event) {
 
 
 /* =========================
-   CALIBRATE
+   CALIBRATION
    ========================= */
 
 async function calibrate() {
 
     /*
-     * FIRST:
-     * Start the sensor.
+     * Start sensors first.
      */
 
     if (
@@ -925,10 +1020,7 @@ async function calibrate() {
 
 
     /*
-     * Sensor permission has now
-     * been granted, but the browser
-     * may need a moment to deliver
-     * the first sensor event.
+     * Wait for sensor data.
      */
 
     if (
@@ -940,10 +1032,6 @@ async function calibrate() {
             "Sensor active. " +
             "Hold phone still...";
 
-
-        /*
-         * Wait for sensor data.
-         */
 
         waitForSensorCalibration();
 
@@ -962,10 +1050,6 @@ async function calibrate() {
    ========================= */
 
 function waitForSensorCalibration() {
-
-    /*
-     * Check again after 100 ms.
-     */
 
     setTimeout(
         function() {
@@ -998,20 +1082,13 @@ function waitForSensorCalibration() {
 
 function completeCalibration() {
 
-    /*
-     * Save current orientation.
-     */
-
     calibratedBeta =
         lastBeta;
+
 
     calibratedGamma =
         lastGamma;
 
-
-    /*
-     * Display calibration.
-     */
 
     calBetaDisplay.textContent =
         calibratedBeta.toFixed(1);
@@ -1021,29 +1098,15 @@ function completeCalibration() {
         calibratedGamma.toFixed(1);
 
 
-    /*
-     * Reset velocity.
-     */
-
     velocityX = 0;
 
     velocityY = 0;
 
 
-    /*
-     * Update status.
-
-     */
-
     statusDisplay.textContent =
         "Calibration complete. " +
         "Press Start Game.";
 
-
-    /*
-     * Enable Start Game.
-
-     */
 
     startButton.disabled =
         false;
@@ -1174,30 +1237,24 @@ function catchTarget() {
 
 function updateBall() {
 
-    /*
-     * Move ball.
-     */
-
     ballX +=
         velocityX;
+
 
     ballY +=
         velocityY;
 
 
-    /*
-     * Friction.
-     */
-
     velocityX *=
         friction;
+
 
     velocityY *=
         friction;
 
 
     /*
-     * Keep ball on screen.
+     * Screen boundaries.
      */
 
     if (
@@ -1261,29 +1318,34 @@ function updateBall() {
 
 
     /*
-     * Update ball graphics.
+     * Display ball.
+
      */
 
     ball.style.left =
         ballX + "px";
+
 
     ball.style.top =
         ballY + "px";
 
 
     /*
-     * Debug information.
+     * Debug values.
+
      */
 
     velocityXDisplay.textContent =
         velocityX.toFixed(2);
+
 
     velocityYDisplay.textContent =
         velocityY.toFixed(2);
 
 
     /*
-     * Check target collision.
+     * Collision.
+
      */
 
     checkCollision();
@@ -1331,7 +1393,7 @@ calibrateButton.addEventListener(
 
 
 /* =========================
-   START GAME BUTTON
+   START GAME
    ========================= */
 
 startButton.addEventListener(
@@ -1339,8 +1401,7 @@ startButton.addEventListener(
     async function() {
 
         /*
-         * Calibration must have
-         * already happened.
+         * Calibration required.
          */
 
         if (
@@ -1357,8 +1418,7 @@ startButton.addEventListener(
 
 
         /*
-         * Camera is requested ONLY
-         * when Start Game is pressed.
+         * Start camera.
          */
 
         const cameraStarted =
@@ -1376,6 +1436,7 @@ startButton.addEventListener(
 
         /*
          * Reset ball.
+
          */
 
         ballX =
@@ -1392,6 +1453,7 @@ startButton.addEventListener(
 
         /*
          * Reset score.
+
          */
 
         score = 0;
@@ -1401,7 +1463,8 @@ startButton.addEventListener(
 
 
         /*
-         * Create target.
+         * New target.
+
          */
 
         moveTarget();
@@ -1409,23 +1472,20 @@ startButton.addEventListener(
 
         /*
          * Start game.
+
          */
 
         gameStarted =
             true;
 
 
-        /*
-         * Update status.
-
-         */
-
         statusDisplay.textContent =
             "Find the target!";
 
 
         /*
-         * Disable controls.
+         * Disable buttons.
+
          */
 
         calibrateButton.disabled =
@@ -1454,8 +1514,7 @@ moveTarget();
 
 
 /*
- * Start with Start Game
- * disabled until calibration.
+ * Start Game initially disabled.
  */
 
 startButton.disabled =
