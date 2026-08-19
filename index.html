@@ -128,10 +128,6 @@
         }
 
 
-        /*
-         * Inner part of target.
-         */
-
         #target::after {
 
             content: "";
@@ -363,6 +359,16 @@
 
         <br>
 
+        Calibrated Beta:
+        <span id="calBeta">---</span>
+
+        <br>
+
+        Calibrated Gamma:
+        <span id="calGamma">---</span>
+
+        <br>
+
         Velocity X:
         <span id="velocityX">0</span>
 
@@ -453,6 +459,18 @@ const gammaDisplay =
     );
 
 
+const calBetaDisplay =
+    document.getElementById(
+        "calBeta"
+    );
+
+
+const calGammaDisplay =
+    document.getElementById(
+        "calGamma"
+    );
+
+
 const velocityXDisplay =
     document.getElementById(
         "velocityX"
@@ -471,7 +489,6 @@ const velocityYDisplay =
 
 let ballX =
     window.innerWidth / 2;
-
 
 let ballY =
     window.innerHeight / 2;
@@ -493,13 +510,12 @@ let velocityY = 0;
 let targetX =
     window.innerWidth * 0.75;
 
-
 let targetY =
     window.innerHeight * 0.5;
 
 
 /* =========================
-   SENSOR
+   SENSOR VALUES
    ========================= */
 
 let lastBeta = null;
@@ -510,14 +526,25 @@ let calibratedBeta = null;
 
 let calibratedGamma = null;
 
+
+/*
+ * Has the orientation listener
+ * already been started?
+ */
+
 let sensorActive = false;
 
 
-/* =========================
-   GAME STATE
-   ========================= */
+/*
+ * Has the game started?
+ */
 
 let gameStarted = false;
+
+
+/*
+ * Score.
+ */
 
 let score = 0;
 
@@ -529,14 +556,11 @@ let score = 0;
 const acceleration =
     0.15;
 
-
 const maxSpeed =
     8;
 
-
 const friction =
     0.92;
-
 
 const deadZone =
     3;
@@ -549,15 +573,8 @@ const deadZone =
 const ballRadius =
     30;
 
-
 const targetRadius =
     45;
-
-
-/*
- * How close the ball needs
- * to get to the target.
- */
 
 const catchDistance =
     ballRadius +
@@ -593,6 +610,9 @@ async function startCamera() {
         camera.srcObject =
             stream;
 
+
+        return true;
+
     }
 
     catch (error) {
@@ -602,105 +622,126 @@ async function startCamera() {
             error
         );
 
+
         statusDisplay.textContent =
             "Camera error: " +
             error.message;
 
+
+        return false;
+
     }
 
 }
 
 
 /* =========================
-   CREATE TARGET
+   START SENSOR
    ========================= */
 
-function moveTarget() {
+async function startSensors() {
 
     /*
-     * Keep the target away
-     * from the edges.
+     * If the sensor is already
+     * active, don't add another
+     * event listener.
      */
 
-    const margin = 100;
+    if (sensorActive) {
 
+        return true;
 
-    targetX =
-        margin +
-        Math.random() *
-        (
-            window.innerWidth -
-            margin * 2
-        );
-
-
-    targetY =
-        margin +
-        Math.random() *
-        (
-            window.innerHeight -
-            margin * 2
-        );
+    }
 
 
     /*
-     * Move target visually.
+     * iPhone Safari.
      */
-
-    target.style.left =
-        targetX + "px";
-
-
-    target.style.top =
-        targetY + "px";
-
-}
-
-
-/* =========================
-   CALIBRATION
-   ========================= */
-
-function calibrate() {
 
     if (
-        lastBeta === null ||
-        lastGamma === null
+        typeof DeviceOrientationEvent !==
+        "undefined" &&
+
+        typeof DeviceOrientationEvent
+            .requestPermission ===
+        "function"
     ) {
 
-        statusDisplay.textContent =
-            "Waiting for sensor data...";
+        try {
 
-        return;
+            const permission =
+                await DeviceOrientationEvent
+                    .requestPermission();
+
+
+            if (
+                permission !==
+                "granted"
+            ) {
+
+                statusDisplay.textContent =
+                    "Motion permission denied.";
+
+                return false;
+
+            }
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Motion permission error:",
+                error
+            );
+
+
+            statusDisplay.textContent =
+                "Motion permission error: " +
+                error.message;
+
+
+            return false;
+
+        }
 
     }
 
 
-    calibratedBeta =
-        lastBeta;
+    /*
+     * Start receiving orientation
+     * data.
+     */
+
+    window.addEventListener(
+        "deviceorientation",
+        handleOrientation
+    );
 
 
-    calibratedGamma =
-        lastGamma;
-
-
-    velocityX = 0;
-
-    velocityY = 0;
+    sensorActive =
+        true;
 
 
     statusDisplay.textContent =
-        "Calibration complete. " +
-        "Press Start Game.";
+        "Sensor active. " +
+        "Calibrating...";
+
+
+    return true;
 
 }
 
 
 /* =========================
-   ORIENTATION
+   ORIENTATION HANDLER
    ========================= */
 
 function handleOrientation(event) {
+
+    /*
+     * Store sensor values.
+     */
 
     if (
         event.beta !== null
@@ -723,7 +764,7 @@ function handleOrientation(event) {
 
 
     /*
-     * Display sensor values.
+     * Display values.
      */
 
     if (
@@ -747,8 +788,8 @@ function handleOrientation(event) {
 
 
     /*
-     * Don't control ball
-     * until game starts.
+     * Don't control the ball
+     * until the game starts.
      */
 
     if (
@@ -759,6 +800,10 @@ function handleOrientation(event) {
 
     }
 
+
+    /*
+     * Need calibration first.
+     */
 
     if (
         calibratedBeta === null ||
@@ -772,7 +817,7 @@ function handleOrientation(event) {
 
     /*
      * Calculate tilt from
-     * calibrated position.
+     * calibrated orientation.
      */
 
     let horizontalTilt =
@@ -824,7 +869,7 @@ function handleOrientation(event) {
 
 
     /*
-     * Maximum speed.
+     * Limit maximum speed.
      */
 
     velocityX =
@@ -850,7 +895,201 @@ function handleOrientation(event) {
 
 
 /* =========================
-   COLLISION DETECTION
+   CALIBRATE
+   ========================= */
+
+async function calibrate() {
+
+    /*
+     * FIRST:
+     * Start the sensor.
+     */
+
+    if (
+        !sensorActive
+    ) {
+
+        const success =
+            await startSensors();
+
+
+        if (
+            !success
+        ) {
+
+            return;
+
+        }
+
+    }
+
+
+    /*
+     * Sensor permission has now
+     * been granted, but the browser
+     * may need a moment to deliver
+     * the first sensor event.
+     */
+
+    if (
+        lastBeta === null ||
+        lastGamma === null
+    ) {
+
+        statusDisplay.textContent =
+            "Sensor active. " +
+            "Hold phone still...";
+
+
+        /*
+         * Wait for sensor data.
+         */
+
+        waitForSensorCalibration();
+
+        return;
+
+    }
+
+
+    completeCalibration();
+
+}
+
+
+/* =========================
+   WAIT FOR SENSOR
+   ========================= */
+
+function waitForSensorCalibration() {
+
+    /*
+     * Check again after 100 ms.
+     */
+
+    setTimeout(
+        function() {
+
+            if (
+                lastBeta !== null &&
+                lastGamma !== null
+            ) {
+
+                completeCalibration();
+
+            }
+
+            else {
+
+                waitForSensorCalibration();
+
+            }
+
+        },
+        100
+    );
+
+}
+
+
+/* =========================
+   COMPLETE CALIBRATION
+   ========================= */
+
+function completeCalibration() {
+
+    /*
+     * Save current orientation.
+     */
+
+    calibratedBeta =
+        lastBeta;
+
+    calibratedGamma =
+        lastGamma;
+
+
+    /*
+     * Display calibration.
+     */
+
+    calBetaDisplay.textContent =
+        calibratedBeta.toFixed(1);
+
+
+    calGammaDisplay.textContent =
+        calibratedGamma.toFixed(1);
+
+
+    /*
+     * Reset velocity.
+     */
+
+    velocityX = 0;
+
+    velocityY = 0;
+
+
+    /*
+     * Update status.
+
+     */
+
+    statusDisplay.textContent =
+        "Calibration complete. " +
+        "Press Start Game.";
+
+
+    /*
+     * Enable Start Game.
+
+     */
+
+    startButton.disabled =
+        false;
+
+}
+
+
+/* =========================
+   MOVE TARGET
+   ========================= */
+
+function moveTarget() {
+
+    const margin = 100;
+
+
+    targetX =
+        margin +
+        Math.random() *
+        (
+            window.innerWidth -
+            margin * 2
+        );
+
+
+    targetY =
+        margin +
+        Math.random() *
+        (
+            window.innerHeight -
+            margin * 2
+        );
+
+
+    target.style.left =
+        targetX + "px";
+
+
+    target.style.top =
+        targetY + "px";
+
+}
+
+
+/* =========================
+   COLLISION
    ========================= */
 
 function checkCollision() {
@@ -865,24 +1104,12 @@ function checkCollision() {
         targetY;
 
 
-    /*
-     * Pythagoras:
-
-       distance =
-       sqrt(dx² + dy²)
-    */
-
     const distance =
         Math.sqrt(
             dx * dx +
             dy * dy
         );
 
-
-    /*
-     * Have we reached
-     * the target?
-     */
 
     if (
         distance <
@@ -897,14 +1124,10 @@ function checkCollision() {
 
 
 /* =========================
-   TARGET CAUGHT
+   CATCH TARGET
    ========================= */
 
 function catchTarget() {
-
-    /*
-     * Increase score.
-     */
 
     score++;
 
@@ -914,38 +1137,24 @@ function catchTarget() {
         score;
 
 
-    /*
-     * Stop the ball briefly.
-     */
-
     velocityX = 0;
 
     velocityY = 0;
 
 
-    /*
-     * Move target.
-     */
-
     moveTarget();
 
-
-    /*
-     * Show feedback.
-     */
 
     statusDisplay.textContent =
         "CAUGHT! 🎯";
 
 
-    /*
-     * Return to normal message.
-     */
-
     setTimeout(
         function() {
 
-            if (gameStarted) {
+            if (
+                gameStarted
+            ) {
 
                 statusDisplay.textContent =
                     "Find the next target!";
@@ -966,36 +1175,34 @@ function catchTarget() {
 function updateBall() {
 
     /*
-     * Move according to
-     * velocity.
+     * Move ball.
      */
 
     ballX +=
         velocityX;
-
 
     ballY +=
         velocityY;
 
 
     /*
-     * Apply friction.
+     * Friction.
      */
 
     velocityX *=
         friction;
-
 
     velocityY *=
         friction;
 
 
     /*
-     * Keep ball inside screen.
+     * Keep ball on screen.
      */
 
     if (
-        ballX < ballRadius
+        ballX <
+        ballRadius
     ) {
 
         ballX =
@@ -1024,7 +1231,8 @@ function updateBall() {
 
 
     if (
-        ballY < ballRadius
+        ballY <
+        ballRadius
     ) {
 
         ballY =
@@ -1053,32 +1261,29 @@ function updateBall() {
 
 
     /*
-     * Update ball position.
+     * Update ball graphics.
      */
 
     ball.style.left =
         ballX + "px";
-
 
     ball.style.top =
         ballY + "px";
 
 
     /*
-     * Debug display.
+     * Debug information.
      */
 
     velocityXDisplay.textContent =
         velocityX.toFixed(2);
-
 
     velocityYDisplay.textContent =
         velocityY.toFixed(2);
 
 
     /*
-     * Check whether ball
-     * reached target.
+     * Check target collision.
      */
 
     checkCollision();
@@ -1112,95 +1317,6 @@ gameLoop();
 
 
 /* =========================
-   START SENSOR
-   ========================= */
-
-async function startSensors() {
-
-    /*
-     * iPhone Safari.
-     */
-
-    if (
-        typeof DeviceOrientationEvent !==
-        "undefined" &&
-
-        typeof DeviceOrientationEvent
-            .requestPermission ===
-        "function"
-    ) {
-
-        try {
-
-            const permission =
-                await DeviceOrientationEvent
-                    .requestPermission();
-
-
-            if (
-                permission ===
-                "granted"
-            ) {
-
-                window.addEventListener(
-                    "deviceorientation",
-                    handleOrientation
-                );
-
-                sensorActive =
-                    true;
-
-                return true;
-
-            }
-
-            else {
-
-                statusDisplay.textContent =
-                    "Motion permission denied.";
-
-                return false;
-
-            }
-
-        }
-
-        catch (error) {
-
-            console.error(
-                error
-            );
-
-            statusDisplay.textContent =
-                "Motion permission error.";
-
-            return false;
-
-        }
-
-    }
-
-
-    /*
-     * Other browsers.
-     */
-
-    window.addEventListener(
-        "deviceorientation",
-        handleOrientation
-    );
-
-
-    sensorActive =
-        true;
-
-
-    return true;
-
-}
-
-
-/* =========================
    CALIBRATE BUTTON
    ========================= */
 
@@ -1222,33 +1338,9 @@ startButton.addEventListener(
     "click",
     async function() {
 
-
         /*
-         * Start sensors.
-         */
-
-        if (
-            !sensorActive
-        ) {
-
-            const success =
-                await startSensors();
-
-
-            if (
-                !success
-            ) {
-
-                return;
-
-            }
-
-        }
-
-
-        /*
-         * Make sure we have
-         * calibration.
+         * Calibration must have
+         * already happened.
          */
 
         if (
@@ -1265,10 +1357,21 @@ startButton.addEventListener(
 
 
         /*
-         * Start camera.
+         * Camera is requested ONLY
+         * when Start Game is pressed.
          */
 
-        await startCamera();
+        const cameraStarted =
+            await startCamera();
+
+
+        if (
+            !cameraStarted
+        ) {
+
+            return;
+
+        }
 
 
         /*
@@ -1277,7 +1380,6 @@ startButton.addEventListener(
 
         ballX =
             window.innerWidth / 2;
-
 
         ballY =
             window.innerHeight / 2;
@@ -1294,13 +1396,12 @@ startButton.addEventListener(
 
         score = 0;
 
-
         scoreDisplay.textContent =
             "Score: 0";
 
 
         /*
-         * Create first target.
+         * Create target.
          */
 
         moveTarget();
@@ -1308,7 +1409,6 @@ startButton.addEventListener(
 
         /*
          * Start game.
-
          */
 
         gameStarted =
@@ -1316,16 +1416,20 @@ startButton.addEventListener(
 
 
         /*
-         * Update UI.
+         * Update status.
+
          */
 
         statusDisplay.textContent =
             "Find the target!";
 
 
+        /*
+         * Disable controls.
+         */
+
         calibrateButton.disabled =
             true;
-
 
         startButton.disabled =
             true;
@@ -1335,7 +1439,7 @@ startButton.addEventListener(
 
 
 /* =========================
-   INITIAL POSITIONS
+   INITIAL POSITION
    ========================= */
 
 ball.style.left =
@@ -1347,6 +1451,16 @@ ball.style.top =
 
 
 moveTarget();
+
+
+/*
+ * Start with Start Game
+ * disabled until calibration.
+ */
+
+startButton.disabled =
+    true;
+
 
 </script>
 
