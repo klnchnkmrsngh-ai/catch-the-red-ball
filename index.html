@@ -11,25 +11,34 @@
                    maximum-scale=1.0,
                    user-scalable=no">
 
-    <title>iPhone Sensor Test</title>
+    <title>Catch the Red Ball</title>
+
 
     <style>
 
+        * {
+            box-sizing: border-box;
+        }
+
+
         html,
         body {
+
             margin: 0;
             padding: 0;
 
             width: 100%;
             height: 100%;
 
+            overflow: hidden;
+
             background: black;
-
-            color: white;
-
-            font-family: Arial, sans-serif;
         }
 
+
+        /* -------------------------
+           CAMERA
+           ------------------------- */
 
         #camera {
 
@@ -47,7 +56,11 @@
         }
 
 
-        #overlay {
+        /* -------------------------
+           GAME OVERLAY
+           ------------------------- */
+
+        #game {
 
             position: fixed;
 
@@ -59,28 +72,39 @@
 
             z-index: 2;
 
-            padding: 20px;
-
             pointer-events: none;
         }
 
 
-        #sensorDisplay {
+        /* -------------------------
+           RED BALL
+           ------------------------- */
 
-            background:
-                rgba(0, 0, 0, 0.75);
+        #ball {
 
-            padding: 15px;
+            position: absolute;
 
-            border-radius: 10px;
+            width: 70px;
+            height: 70px;
 
-            font-family: monospace;
+            background: red;
 
-            font-size: 18px;
+            border-radius: 50%;
 
-            line-height: 1.6;
+            transform:
+                translate(-50%, -50%);
+
+            pointer-events: auto;
+
+            box-shadow:
+                0 0 15px
+                rgba(255, 0, 0, 0.8);
         }
 
+
+        /* -------------------------
+           START BUTTON
+           ------------------------- */
 
         #startButton {
 
@@ -92,11 +116,45 @@
             transform:
                 translate(-50%, -50%);
 
-            padding: 20px 30px;
+            padding: 15px 25px;
 
             font-size: 20px;
 
+            z-index: 10;
+
             pointer-events: auto;
+        }
+
+
+        /* -------------------------
+           SENSOR DISPLAY
+           ------------------------- */
+
+        #sensorDisplay {
+
+            position: absolute;
+
+            top: 20px;
+            left: 20px;
+
+            padding: 12px;
+
+            background:
+                rgba(0, 0, 0, 0.65);
+
+            color: white;
+
+            font-family: monospace;
+
+            font-size: 15px;
+
+            line-height: 1.5;
+
+            border-radius: 8px;
+
+            z-index: 20;
+
+            pointer-events: none;
         }
 
     </style>
@@ -107,23 +165,38 @@
 <body>
 
 
+<!-- =========================
+     CAMERA
+     ========================= -->
+
 <video id="camera"
        autoplay
        playsinline>
 </video>
 
 
-<div id="overlay">
+<!-- =========================
+     GAME
+     ========================= -->
 
+<div id="game">
+
+
+    <!-- Red ball -->
+
+    <div id="ball"></div>
+
+
+    <!-- Start button -->
+
+    <button id="startButton">
+        Start Game
+    </button>
+
+
+    <!-- Sensor information -->
 
     <div id="sensorDisplay">
-
-        Status:
-        <span id="status">
-            Waiting
-        </span>
-
-        <br><br>
 
         Alpha:
         <span id="alpha">---</span>
@@ -140,15 +213,15 @@
 
         <br><br>
 
-        Error:
-        <span id="error">---</span>
+        Ball X:
+        <span id="ballX">---</span>
+
+        <br>
+
+        Ball Y:
+        <span id="ballY">---</span>
 
     </div>
-
-
-    <button id="startButton">
-        Start Sensor Test
-    </button>
 
 
 </div>
@@ -157,27 +230,25 @@
 <script>
 
 
+/* =========================
+   HTML ELEMENTS
+   ========================= */
+
 const camera =
     document.getElementById(
         "camera"
     );
 
 
+const ball =
+    document.getElementById(
+        "ball"
+    );
+
+
 const startButton =
     document.getElementById(
         "startButton"
-    );
-
-
-const status =
-    document.getElementById(
-        "status"
-    );
-
-
-const errorDisplay =
-    document.getElementById(
-        "error"
     );
 
 
@@ -199,123 +270,417 @@ const gammaDisplay =
     );
 
 
-/* -------------------------
-   SENSOR DATA
-   ------------------------- */
-
-function handleOrientation(event) {
-
-    status.textContent =
-        "Sensor working";
+const ballXDisplay =
+    document.getElementById(
+        "ballX"
+    );
 
 
-    alphaDisplay.textContent =
-        event.alpha === null
-        ? "null"
-        : event.alpha.toFixed(2);
+const ballYDisplay =
+    document.getElementById(
+        "ballY"
+    );
 
 
-    betaDisplay.textContent =
-        event.beta === null
-        ? "null"
-        : event.beta.toFixed(2);
+/* =========================
+   BALL POSITION
+   ========================= */
+
+/*
+ * Start the ball in the
+ * middle of the screen.
+ */
+
+let ballX =
+    window.innerWidth / 2;
 
 
-    gammaDisplay.textContent =
-        event.gamma === null
-        ? "null"
-        : event.gamma.toFixed(2);
+let ballY =
+    window.innerHeight / 2;
+
+
+/*
+ * How strongly the phone
+ * movement affects the ball.
+ */
+
+const sensitivity = 5;
+
+
+/* =========================
+   STARTING ORIENTATION
+   ========================= */
+
+/*
+ * When the game starts,
+ * we'll remember the phone's
+ * current orientation.
+ */
+
+let startingBeta = null;
+
+let startingGamma = null;
+
+
+/* =========================
+   CAMERA
+   ========================= */
+
+async function startCamera() {
+
+    try {
+
+        const stream =
+            await navigator.mediaDevices
+                .getUserMedia({
+
+                    video: {
+
+                        facingMode: {
+                            ideal:
+                                "environment"
+                        }
+
+                    },
+
+                    audio: false
+
+                });
+
+
+        camera.srcObject =
+            stream;
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Camera error:",
+            error
+        );
+
+        alert(
+            "Could not access camera.\n\n" +
+            error.name +
+            "\n\n" +
+            error.message
+        );
+
+    }
 
 }
 
 
-/* -------------------------
-   START
-   ------------------------- */
+/* =========================
+   UPDATE BALL
+   ========================= */
+
+function updateBall() {
+
+    /*
+     * Keep the ball inside
+     * the screen.
+     */
+
+    const radius = 35;
+
+
+    if (ballX < radius) {
+
+        ballX = radius;
+
+    }
+
+
+    if (
+        ballX >
+        window.innerWidth - radius
+    ) {
+
+        ballX =
+            window.innerWidth - radius;
+
+    }
+
+
+    if (ballY < radius) {
+
+        ballY = radius;
+
+    }
+
+
+    if (
+        ballY >
+        window.innerHeight - radius
+    ) {
+
+        ballY =
+            window.innerHeight - radius;
+
+    }
+
+
+    /*
+     * Move the HTML ball.
+     */
+
+    ball.style.left =
+        ballX + "px";
+
+
+    ball.style.top =
+        ballY + "px";
+
+
+    /*
+     * Display position.
+     */
+
+    ballXDisplay.textContent =
+        Math.round(ballX);
+
+
+    ballYDisplay.textContent =
+        Math.round(ballY);
+
+}
+
+
+/* =========================
+   ORIENTATION
+   ========================= */
+
+function handleOrientation(event) {
+
+    /*
+     * Read sensor values.
+     */
+
+    const alpha =
+        event.alpha;
+
+
+    const beta =
+        event.beta;
+
+
+    const gamma =
+        event.gamma;
+
+
+    /*
+     * Display raw values.
+     */
+
+    if (alpha !== null) {
+
+        alphaDisplay.textContent =
+            alpha.toFixed(1);
+
+    }
+
+
+    if (beta !== null) {
+
+        betaDisplay.textContent =
+            beta.toFixed(1);
+
+    }
+
+
+    if (gamma !== null) {
+
+        gammaDisplay.textContent =
+            gamma.toFixed(1);
+
+    }
+
+
+    /*
+     * We need beta and gamma
+     * to control the ball.
+     */
+
+    if (
+        beta === null ||
+        gamma === null
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+     * Remember the phone's
+     * starting orientation.
+     */
+
+    if (
+        startingBeta === null
+    ) {
+
+        startingBeta = beta;
+
+    }
+
+
+    if (
+        startingGamma === null
+    ) {
+
+        startingGamma = gamma;
+
+    }
+
+
+    /*
+     * Calculate how far the
+     * phone has moved from
+     * its starting position.
+     */
+
+    const betaChange =
+        beta - startingBeta;
+
+
+    const gammaChange =
+        gamma - startingGamma;
+
+
+    /*
+     * Move the ball.
+     *
+     * Gamma controls X.
+     * Beta controls Y.
+     */
+
+    ballX =
+        window.innerWidth / 2
+        +
+        gammaChange * sensitivity;
+
+
+    ballY =
+        window.innerHeight / 2
+        +
+        betaChange * sensitivity;
+
+
+    /*
+     * Apply the new position.
+     */
+
+    updateBall();
+
+}
+
+
+/* =========================
+   START GAME
+   ========================= */
 
 startButton.addEventListener(
     "click",
     async function() {
 
 
+        /*
+         * Hide button.
+         */
+
         startButton.style.display =
             "none";
 
 
         /*
-         * FIRST:
-         * Request motion permission.
+         * Start camera.
          */
 
-        status.textContent =
-            "Requesting motion permission...";
-
-
-        if (
-            typeof DeviceOrientationEvent ===
-            "undefined"
-        ) {
-
-            status.textContent =
-                "DeviceOrientationEvent not supported";
-
-            return;
-        }
+        await startCamera();
 
 
         /*
-         * iPhone Safari
+         * Request orientation
+         * permission.
          */
 
         if (
-            typeof DeviceOrientationEvent
-                .requestPermission ===
-            "function"
+            typeof DeviceOrientationEvent !==
+            "undefined"
         ) {
 
-            try {
 
-                const permission =
-                    await DeviceOrientationEvent
-                        .requestPermission();
+            /*
+             * iPhone Safari.
+             */
+
+            if (
+                typeof DeviceOrientationEvent
+                    .requestPermission ===
+                "function"
+            ) {
+
+                try {
+
+                    const permission =
+                        await
+                        DeviceOrientationEvent
+                            .requestPermission();
 
 
-                if (
-                    permission ===
-                    "granted"
-                ) {
+                    if (
+                        permission ===
+                        "granted"
+                    ) {
 
-                    status.textContent =
-                        "Motion permission granted";
+                        window.addEventListener(
+                            "deviceorientation",
+                            handleOrientation
+                        );
 
+                    }
 
-                    window.addEventListener(
-                        "deviceorientation",
-                        handleOrientation
-                    );
+                    else {
+
+                        alert(
+                            "Motion permission was not granted."
+                        );
+
+                    }
 
                 }
 
-                else {
+                catch (error) {
 
-                    status.textContent =
-                        "Permission denied";
+                    console.error(
+                        "Motion permission error:",
+                        error
+                    );
+
+                    alert(
+                        "Motion permission error:\n\n" +
+                        error.name +
+                        "\n" +
+                        error.message
+                    );
 
                 }
 
             }
 
-            catch (err) {
+            /*
+             * Other browsers.
+             */
 
-                status.textContent =
-                    "Permission request failed";
+            else {
 
-                errorDisplay.textContent =
-                    err.name +
-                    ": " +
-                    err.message;
-
-                console.error(err);
+                window.addEventListener(
+                    "deviceorientation",
+                    handleOrientation
+                );
 
             }
 
@@ -323,63 +688,37 @@ startButton.addEventListener(
 
         else {
 
-            /*
-             * Non-iPhone browsers.
-             */
-
-            status.textContent =
-                "Listening for sensor";
-
-
-            window.addEventListener(
-                "deviceorientation",
-                handleOrientation
+            alert(
+                "Device orientation is not supported."
             );
 
         }
 
 
         /*
-         * SECOND:
-         * Start the camera separately.
+         * Start ball in centre.
          */
 
-        try {
-
-            const stream =
-                await navigator.mediaDevices
-                    .getUserMedia({
-
-                        video: {
-
-                            facingMode: {
-                                ideal:
-                                    "environment"
-                            }
-
-                        },
-
-                        audio: false
-
-                    });
+        ballX =
+            window.innerWidth / 2;
 
 
-            camera.srcObject =
-                stream;
+        ballY =
+            window.innerHeight / 2;
 
-        }
 
-        catch (err) {
-
-            console.error(
-                "Camera error:",
-                err
-            );
-
-        }
+        updateBall();
 
     }
 );
+
+
+/* =========================
+   INITIAL POSITION
+   ========================= */
+
+updateBall();
+
 
 </script>
 
