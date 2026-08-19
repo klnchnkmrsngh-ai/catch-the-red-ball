@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width,
+                   initial-scale=1.0,
+                   maximum-scale=1.0,
+                   user-scalable=no">
+
+    <title>Catch the Red Ball</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: black;
+        }
+
+        #camera {
+            position: fixed;
+            top: 0;
+            left: 0;
+
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+        }
+
+        #game {
+            position: fixed;
+            top: 0;
+            left: 0;
+
+            width: 100%;
+            height: 100%;
+
+            pointer-events: none;
+        }
+
+        #ball {
+            position: absolute;
+
+            width: 70px;
+            height: 70px;
+
+            background: red;
+            border-radius: 50%;
+
+            transform: translate(-50%, -50%);
+
+            pointer-events: auto;
+        }
+
+        #startButton {
+            position: absolute;
+
+            left: 50%;
+            top: 50%;
+
+            transform: translate(-50%, -50%);
+
+            padding: 15px 25px;
+
+            font-size: 20px;
+
+            z-index: 10;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Camera -->
+    <video id="camera"
+           autoplay
+           playsinline>
+    </video>
+
+    <!-- Game graphics -->
+    <div id="game">
+
+        <div id="ball"></div>
+
+        <button id="startButton">
+            Start Game
+        </button>
+
+    </div>
+
+    <script>
+
+        const camera = document.getElementById("camera");
+        const ball = document.getElementById("ball");
+        const startButton = document.getElementById("startButton");
+
+
+        // Start the camera
+        async function startCamera() {
+
+            try {
+
+                const stream =
+                    await navigator.mediaDevices.getUserMedia({
+
+                        video: {
+                            facingMode: {
+                                ideal: "environment"
+                            }
+                        },
+
+                        audio: false
+                    });
+
+                camera.srcObject = stream;
+
+            } catch (error) {
+
+                console.error("Camera error:", error);
+
+                alert(
+                    "Could not access the camera.\n\n" +
+                    error.name + ": " +
+                    error.message
+                );
+            }
+        }
+
+
+        // Put the ball somewhere random
+        function moveBall() {
+
+            const ballSize = 70;
+
+            const x =
+                Math.random() *
+                (window.innerWidth - ballSize)
+                + ballSize / 2;
+
+            const y =
+                Math.random() *
+                (window.innerHeight - ballSize)
+                + ballSize / 2;
+
+            ball.style.left = x + "px";
+            ball.style.top = y + "px";
+        }
+
+
+        // Start button
+        startButton.addEventListener("click", async function() {
+
+            startButton.style.display = "none";
+
+            await startCamera();
+
+            moveBall();
+
+        });
+
+
+        // Ball touched
+        ball.addEventListener("click", function() {
+
+            console.log("Ball caught!");
+
+            ball.style.display = "none";
+
+
+            setTimeout(function() {
+
+                moveBall();
+
+                ball.style.display = "block";
+
+            }, 500);
+
+        });
+
+    </script>
+
+</body>
+</html>
