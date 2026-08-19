@@ -11,41 +11,29 @@
                    maximum-scale=1.0,
                    user-scalable=no">
 
-    <title>Catch the Red Ball</title>
-
+    <title>Sensor Test</title>
 
     <style>
 
-        * {
-            box-sizing: border-box;
-        }
-
-
         html,
         body {
-
             margin: 0;
             padding: 0;
 
             width: 100%;
             height: 100%;
 
-            overflow: hidden;
-
             background: black;
+
+            color: white;
+
+            font-family: Arial, sans-serif;
+
+            overflow: hidden;
         }
 
-
-        /* -------------------------
-           CAMERA
-           ------------------------- */
-
         #camera {
-
             position: fixed;
-
-            top: 0;
-            left: 0;
 
             width: 100%;
             height: 100%;
@@ -55,13 +43,7 @@
             z-index: 1;
         }
 
-
-        /* -------------------------
-           GAME
-           ------------------------- */
-
-        #game {
-
+        #overlay {
             position: fixed;
 
             top: 0;
@@ -72,88 +54,40 @@
 
             z-index: 2;
 
+            padding: 20px;
+
             pointer-events: none;
         }
 
-
-        /* -------------------------
-           RED BALL
-           ------------------------- */
-
-        #ball {
-
-            position: absolute;
-
-            width: 70px;
-            height: 70px;
-
-            background: red;
-
-            border-radius: 50%;
-
-            transform: translate(-50%, -50%);
-
-            pointer-events: auto;
-
-            box-shadow:
-                0 0 15px
-                rgba(255, 0, 0, 0.8);
-        }
-
-
-        /* -------------------------
-           START BUTTON
-           ------------------------- */
-
         #startButton {
-
             position: absolute;
 
             left: 50%;
             top: 50%;
 
-            transform:
-                translate(-50%, -50%);
+            transform: translate(-50%, -50%);
 
-            padding: 15px 25px;
+            padding: 20px 30px;
 
             font-size: 20px;
-
-            z-index: 10;
 
             pointer-events: auto;
         }
 
-
-        /* -------------------------
-           SENSOR DISPLAY
-           ------------------------- */
-
         #sensorDisplay {
 
-            position: absolute;
+            background: rgba(0, 0, 0, 0.75);
 
-            top: 20px;
-            left: 20px;
+            padding: 15px;
 
-            padding: 12px;
-
-            background:
-                rgba(0, 0, 0, 0.65);
-
-            color: white;
+            border-radius: 10px;
 
             font-family: monospace;
 
-            font-size: 16px;
+            font-size: 18px;
 
-            line-height: 1.5;
+            line-height: 1.6;
 
-            border-radius: 8px;
-
-            z-index: 20;
-
-            pointer-events: none;
         }
 
     </style>
@@ -164,394 +98,234 @@
 <body>
 
 
-    <!-- Camera -->
-
-    <video id="camera"
-           autoplay
-           playsinline>
-    </video>
+<video id="camera"
+       autoplay
+       playsinline>
+</video>
 
 
-    <!-- Game -->
+<div id="overlay">
 
-    <div id="game">
+    <div id="sensorDisplay">
 
+        Sensor status: <span id="status">
+            Waiting...
+        </span>
 
-        <!-- Red ball -->
+        <br><br>
 
-        <div id="ball"></div>
+        Alpha:
+        <span id="alpha">---</span>
 
+        <br>
 
-        <!-- Start button -->
+        Beta:
+        <span id="beta">---</span>
 
-        <button id="startButton">
-            Start Game
-        </button>
+        <br>
 
-
-        <!-- Sensor values -->
-
-        <div id="sensorDisplay">
-
-            Alpha: <span id="alpha">---</span><br>
-
-            Beta: <span id="beta">---</span><br>
-
-            Gamma: <span id="gamma">---</span>
-
-        </div>
-
+        Gamma:
+        <span id="gamma">---</span>
 
     </div>
 
 
-    <script>
+    <button id="startButton">
+        Start Sensor Test
+    </button>
+
+</div>
 
 
-        /* -------------------------
-           HTML ELEMENTS
-           ------------------------- */
-
-        const camera =
-            document.getElementById("camera");
-
-        const ball =
-            document.getElementById("ball");
-
-        const startButton =
-            document.getElementById(
-                "startButton"
-            );
+<script>
 
 
-        const alphaDisplay =
-            document.getElementById(
-                "alpha"
-            );
+const camera =
+    document.getElementById("camera");
 
-        const betaDisplay =
-            document.getElementById(
-                "beta"
-            );
+const startButton =
+    document.getElementById("startButton");
 
-        const gammaDisplay =
-            document.getElementById(
-                "gamma"
-            );
+const status =
+    document.getElementById("status");
+
+const alphaDisplay =
+    document.getElementById("alpha");
+
+const betaDisplay =
+    document.getElementById("beta");
+
+const gammaDisplay =
+    document.getElementById("gamma");
 
 
-        /* -------------------------
-           CAMERA
-           ------------------------- */
+/* -------------------------
+   CAMERA
+   ------------------------- */
 
-        async function startCamera() {
+async function startCamera() {
+
+    try {
+
+        const stream =
+            await navigator.mediaDevices
+                .getUserMedia({
+
+                    video: {
+                        facingMode: {
+                            ideal: "environment"
+                        }
+                    },
+
+                    audio: false
+
+                });
+
+        camera.srcObject = stream;
+
+    }
+
+    catch (error) {
+
+        status.textContent =
+            "Camera error";
+
+        console.error(error);
+
+    }
+
+}
+
+
+/* -------------------------
+   SENSOR EVENT
+   ------------------------- */
+
+function orientationHandler(event) {
+
+    status.textContent =
+        "Sensor events received";
+
+
+    alphaDisplay.textContent =
+        event.alpha === null
+        ? "null"
+        : event.alpha.toFixed(2);
+
+
+    betaDisplay.textContent =
+        event.beta === null
+        ? "null"
+        : event.beta.toFixed(2);
+
+
+    gammaDisplay.textContent =
+        event.gamma === null
+        ? "null"
+        : event.gamma.toFixed(2);
+
+}
+
+
+/* -------------------------
+   START
+   ------------------------- */
+
+startButton.addEventListener(
+    "click",
+    async function() {
+
+        startButton.style.display =
+            "none";
+
+
+        status.textContent =
+            "Starting camera...";
+
+
+        await startCamera();
+
+
+        status.textContent =
+            "Requesting motion permission...";
+
+
+        /*
+         * iPhone/iPad Safari requires
+         * permission to use motion sensors.
+         */
+
+        if (
+            typeof DeviceOrientationEvent !==
+            "undefined" &&
+
+            typeof DeviceOrientationEvent
+                .requestPermission ===
+                "function"
+        ) {
 
             try {
 
-                const stream =
-                    await navigator.mediaDevices
-                        .getUserMedia({
-
-                            video: {
-
-                                facingMode: {
-                                    ideal:
-                                        "environment"
-                                }
-
-                            },
-
-                            audio: false
-
-                        });
+                const permission =
+                    await DeviceOrientationEvent
+                        .requestPermission();
 
 
-                camera.srcObject =
-                    stream;
+                if (permission === "granted") {
+
+                    status.textContent =
+                        "Permission granted. Waiting for sensor...";
+
+
+                    window.addEventListener(
+                        "deviceorientation",
+                        orientationHandler
+                    );
+
+                }
+
+                else {
+
+                    status.textContent =
+                        "Motion permission DENIED";
+
+                }
 
             }
 
             catch (error) {
 
-                console.error(
-                    "Camera error:",
-                    error
-                );
+                status.textContent =
+                    "Permission error";
 
-                alert(
-                    "Could not access camera.\n\n" +
-                    error.name +
-                    "\n\n" +
-                    error.message
-                );
+                console.error(error);
 
             }
 
         }
 
+        else {
 
-        /* -------------------------
-           MOVE BALL
-           ------------------------- */
+            /*
+             * Browsers that don't require
+             * an explicit permission request.
+             */
 
-        function moveBall() {
-
-            const ballSize = 70;
-
-
-            const x =
-                Math.random() *
-                (window.innerWidth -
-                    ballSize)
-                +
-                ballSize / 2;
+            status.textContent =
+                "Listening for sensor...";
 
 
-            const y =
-                Math.random() *
-                (window.innerHeight -
-                    ballSize)
-                +
-                ballSize / 2;
-
-
-            ball.style.left =
-                x + "px";
-
-            ball.style.top =
-                y + "px";
+            window.addEventListener(
+                "deviceorientation",
+                orientationHandler
+            );
 
         }
 
+    }
+);
 
-        /* -------------------------
-           DEVICE ORIENTATION
-           ------------------------- */
-
-        function handleOrientation(event) {
-
-            /*
-             * Alpha:
-             * Rotation around the
-             * vertical axis.
-             */
-
-            let alpha =
-                event.alpha;
-
-
-            /*
-             * Beta:
-             * Front/back tilt.
-             */
-
-            let beta =
-                event.beta;
-
-
-            /*
-             * Gamma:
-             * Left/right tilt.
-             */
-
-            let gamma =
-                event.gamma;
-
-
-            /*
-             * Display values.
-             */
-
-            if (alpha !== null) {
-
-                alphaDisplay.textContent =
-                    alpha.toFixed(1);
-
-            }
-
-
-            if (beta !== null) {
-
-                betaDisplay.textContent =
-                    beta.toFixed(1);
-
-            }
-
-
-            if (gamma !== null) {
-
-                gammaDisplay.textContent =
-                    gamma.toFixed(1);
-
-            }
-
-        }
-
-
-        /* -------------------------
-           START GAME
-           ------------------------- */
-
-        startButton.addEventListener(
-            "click",
-            async function() {
-
-
-                console.log(
-                    "Start Game clicked"
-                );
-
-
-                /*
-                 * Start camera.
-                 */
-
-                await startCamera();
-
-
-                /*
-                 * Start listening for
-                 * phone orientation.
-                 */
-
-                if (
-                    typeof DeviceOrientationEvent
-                    !== "undefined"
-                ) {
-
-
-                    /*
-                     * Some browsers,
-                     * particularly iOS,
-                     * require explicit
-                     * permission.
-                     */
-
-                    if (
-                        typeof DeviceOrientationEvent
-                            .requestPermission
-                        === "function"
-                    ) {
-
-                        try {
-
-                            const permission =
-                                await
-                                DeviceOrientationEvent
-                                    .requestPermission();
-
-
-                            if (
-                                permission
-                                === "granted"
-                            ) {
-
-                                window.addEventListener(
-                                    "deviceorientation",
-                                    handleOrientation
-                                );
-
-                            }
-                            else {
-
-                                alert(
-                                    "Motion permission was not granted."
-                                );
-
-                            }
-
-                        }
-                        catch (error) {
-
-                            console.error(
-                                "Orientation permission error:",
-                                error
-                            );
-
-                        }
-
-                    }
-
-                    else {
-
-                        /*
-                         * Android and browsers
-                         * that don't require
-                         * explicit permission.
-                         */
-
-                        window.addEventListener(
-                            "deviceorientation",
-                            handleOrientation
-                        );
-
-                    }
-
-                }
-                else {
-
-                    alert(
-                        "Device orientation is not supported by this browser."
-                    );
-
-                }
-
-
-                /*
-                 * Hide start button.
-                 */
-
-                startButton.style.display =
-                    "none";
-
-
-                /*
-                 * Put ball somewhere.
-                 */
-
-                moveBall();
-
-            }
-        );
-
-
-        /* -------------------------
-           BALL TOUCH
-           ------------------------- */
-
-        ball.addEventListener(
-            "click",
-            function() {
-
-
-                ball.style.display =
-                    "none";
-
-
-                setTimeout(
-                    function() {
-
-                        moveBall();
-
-                        ball.style.display =
-                            "block";
-
-                    },
-                    500
-                );
-
-            }
-        );
-
-
-        /* -------------------------
-           INITIAL BALL
-           ------------------------- */
-
-        moveBall();
-
-
-    </script>
+</script>
 
 </body>
 
