@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta name="viewport"
@@ -12,15 +13,17 @@
 
     <title>Catch the Red Ball</title>
 
+
     <style>
 
-        /* Remove default browser spacing */
         * {
             box-sizing: border-box;
         }
 
+
         html,
         body {
+
             margin: 0;
             padding: 0;
 
@@ -38,6 +41,7 @@
            ------------------------- */
 
         #camera {
+
             position: fixed;
 
             top: 0;
@@ -53,10 +57,11 @@
 
 
         /* -------------------------
-           GAME OVERLAY
+           GAME
            ------------------------- */
 
         #game {
+
             position: fixed;
 
             top: 0;
@@ -67,10 +72,6 @@
 
             z-index: 2;
 
-            /*
-             * The overlay itself should not
-             * block touches.
-             */
             pointer-events: none;
         }
 
@@ -80,6 +81,7 @@
            ------------------------- */
 
         #ball {
+
             position: absolute;
 
             width: 70px;
@@ -91,16 +93,11 @@
 
             transform: translate(-50%, -50%);
 
-            /*
-             * Allow the player to touch
-             * the ball.
-             */
             pointer-events: auto;
 
-            /*
-             * Make it easier to see.
-             */
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+            box-shadow:
+                0 0 15px
+                rgba(255, 0, 0, 0.8);
         }
 
 
@@ -109,12 +106,14 @@
            ------------------------- */
 
         #startButton {
+
             position: absolute;
 
             left: 50%;
             top: 50%;
 
-            transform: translate(-50%, -50%);
+            transform:
+                translate(-50%, -50%);
 
             padding: 15px 25px;
 
@@ -122,15 +121,39 @@
 
             z-index: 10;
 
-            /*
-             * IMPORTANT:
-             * The game overlay has
-             * pointer-events: none.
-             *
-             * We must explicitly allow
-             * the button to receive touches.
-             */
             pointer-events: auto;
+        }
+
+
+        /* -------------------------
+           SENSOR DISPLAY
+           ------------------------- */
+
+        #sensorDisplay {
+
+            position: absolute;
+
+            top: 20px;
+            left: 20px;
+
+            padding: 12px;
+
+            background:
+                rgba(0, 0, 0, 0.65);
+
+            color: white;
+
+            font-family: monospace;
+
+            font-size: 16px;
+
+            line-height: 1.5;
+
+            border-radius: 8px;
+
+            z-index: 20;
+
+            pointer-events: none;
         }
 
     </style>
@@ -141,12 +164,7 @@
 <body>
 
 
-    <!--
-        Camera video.
-
-        The phone camera stream will
-        be placed inside this element.
-    -->
+    <!-- Camera -->
 
     <video id="camera"
            autoplay
@@ -154,22 +172,34 @@
     </video>
 
 
-    <!--
-        Everything inside this element
-        appears on top of the camera.
-    -->
+    <!-- Game -->
 
     <div id="game">
 
 
-        <!-- Red target -->
+        <!-- Red ball -->
+
         <div id="ball"></div>
 
 
         <!-- Start button -->
+
         <button id="startButton">
             Start Game
         </button>
+
+
+        <!-- Sensor values -->
+
+        <div id="sensorDisplay">
+
+            Alpha: <span id="alpha">---</span><br>
+
+            Beta: <span id="beta">---</span><br>
+
+            Gamma: <span id="gamma">---</span>
+
+        </div>
 
 
     </div>
@@ -179,7 +209,7 @@
 
 
         /* -------------------------
-           GET HTML ELEMENTS
+           HTML ELEMENTS
            ------------------------- */
 
         const camera =
@@ -189,46 +219,55 @@
             document.getElementById("ball");
 
         const startButton =
-            document.getElementById("startButton");
+            document.getElementById(
+                "startButton"
+            );
+
+
+        const alphaDisplay =
+            document.getElementById(
+                "alpha"
+            );
+
+        const betaDisplay =
+            document.getElementById(
+                "beta"
+            );
+
+        const gammaDisplay =
+            document.getElementById(
+                "gamma"
+            );
 
 
         /* -------------------------
-           START CAMERA
+           CAMERA
            ------------------------- */
 
         async function startCamera() {
 
-            console.log("Start button pressed");
-
             try {
 
-                /*
-                 * Ask the browser for the
-                 * rear-facing camera.
-                 */
-
                 const stream =
-                    await navigator.mediaDevices.getUserMedia({
+                    await navigator.mediaDevices
+                        .getUserMedia({
 
-                        video: {
-                            facingMode: {
-                                ideal: "environment"
-                            }
-                        },
+                            video: {
 
-                        audio: false
+                                facingMode: {
+                                    ideal:
+                                        "environment"
+                                }
 
-                    });
+                            },
+
+                            audio: false
+
+                        });
 
 
-                /*
-                 * Give the camera stream
-                 * to the video element.
-                 */
-
-                camera.srcObject = stream;
-
-                console.log("Camera started");
+                camera.srcObject =
+                    stream;
 
             }
 
@@ -240,8 +279,7 @@
                 );
 
                 alert(
-                    "Could not access the camera.\n\n" +
-                    "Error: " +
+                    "Could not access camera.\n\n" +
                     error.name +
                     "\n\n" +
                     error.message
@@ -258,72 +296,110 @@
 
         function moveBall() {
 
-            /*
-             * Size of our ball.
-             */
-
             const ballSize = 70;
 
 
-            /*
-             * Choose a random X position.
-             */
-
             const x =
                 Math.random() *
-                (window.innerWidth - ballSize)
+                (window.innerWidth -
+                    ballSize)
                 +
                 ballSize / 2;
 
-
-            /*
-             * Choose a random Y position.
-             */
 
             const y =
                 Math.random() *
-                (window.innerHeight - ballSize)
+                (window.innerHeight -
+                    ballSize)
                 +
                 ballSize / 2;
 
 
-            /*
-             * Apply the position.
-             */
+            ball.style.left =
+                x + "px";
 
-            ball.style.left = x + "px";
-
-            ball.style.top = y + "px";
-
-
-            console.log(
-                "Ball moved to:",
-                x,
-                y
-            );
+            ball.style.top =
+                y + "px";
 
         }
 
 
         /* -------------------------
-           START BUTTON
+           DEVICE ORIENTATION
+           ------------------------- */
+
+        function handleOrientation(event) {
+
+            /*
+             * Alpha:
+             * Rotation around the
+             * vertical axis.
+             */
+
+            let alpha =
+                event.alpha;
+
+
+            /*
+             * Beta:
+             * Front/back tilt.
+             */
+
+            let beta =
+                event.beta;
+
+
+            /*
+             * Gamma:
+             * Left/right tilt.
+             */
+
+            let gamma =
+                event.gamma;
+
+
+            /*
+             * Display values.
+             */
+
+            if (alpha !== null) {
+
+                alphaDisplay.textContent =
+                    alpha.toFixed(1);
+
+            }
+
+
+            if (beta !== null) {
+
+                betaDisplay.textContent =
+                    beta.toFixed(1);
+
+            }
+
+
+            if (gamma !== null) {
+
+                gammaDisplay.textContent =
+                    gamma.toFixed(1);
+
+            }
+
+        }
+
+
+        /* -------------------------
+           START GAME
            ------------------------- */
 
         startButton.addEventListener(
             "click",
             async function() {
 
+
                 console.log(
                     "Start Game clicked"
                 );
-
-
-                /*
-                 * Hide the button.
-                 */
-
-                startButton.style.display =
-                    "none";
 
 
                 /*
@@ -334,8 +410,103 @@
 
 
                 /*
-                 * Put the ball somewhere
-                 * on the screen.
+                 * Start listening for
+                 * phone orientation.
+                 */
+
+                if (
+                    typeof DeviceOrientationEvent
+                    !== "undefined"
+                ) {
+
+
+                    /*
+                     * Some browsers,
+                     * particularly iOS,
+                     * require explicit
+                     * permission.
+                     */
+
+                    if (
+                        typeof DeviceOrientationEvent
+                            .requestPermission
+                        === "function"
+                    ) {
+
+                        try {
+
+                            const permission =
+                                await
+                                DeviceOrientationEvent
+                                    .requestPermission();
+
+
+                            if (
+                                permission
+                                === "granted"
+                            ) {
+
+                                window.addEventListener(
+                                    "deviceorientation",
+                                    handleOrientation
+                                );
+
+                            }
+                            else {
+
+                                alert(
+                                    "Motion permission was not granted."
+                                );
+
+                            }
+
+                        }
+                        catch (error) {
+
+                            console.error(
+                                "Orientation permission error:",
+                                error
+                            );
+
+                        }
+
+                    }
+
+                    else {
+
+                        /*
+                         * Android and browsers
+                         * that don't require
+                         * explicit permission.
+                         */
+
+                        window.addEventListener(
+                            "deviceorientation",
+                            handleOrientation
+                        );
+
+                    }
+
+                }
+                else {
+
+                    alert(
+                        "Device orientation is not supported by this browser."
+                    );
+
+                }
+
+
+                /*
+                 * Hide start button.
+                 */
+
+                startButton.style.display =
+                    "none";
+
+
+                /*
+                 * Put ball somewhere.
                  */
 
                 moveBall();
@@ -345,30 +516,17 @@
 
 
         /* -------------------------
-           BALL TOUCHED
+           BALL TOUCH
            ------------------------- */
 
         ball.addEventListener(
             "click",
             function() {
 
-                console.log(
-                    "Ball caught!"
-                );
-
-
-                /*
-                 * Hide the ball.
-                 */
 
                 ball.style.display =
                     "none";
 
-
-                /*
-                 * Wait half a second,
-                 * then create a new target.
-                 */
 
                 setTimeout(
                     function() {
@@ -386,10 +544,9 @@
         );
 
 
-        /*
-         * Initially place the ball
-         * somewhere on the screen.
-         */
+        /* -------------------------
+           INITIAL BALL
+           ------------------------- */
 
         moveBall();
 
