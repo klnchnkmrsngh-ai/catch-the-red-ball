@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
+
     <meta name="viewport"
           content="width=device-width,
                    initial-scale=1.0,
@@ -11,21 +13,33 @@
     <title>Catch the Red Ball</title>
 
     <style>
+
+        /* Remove default browser spacing */
         * {
             box-sizing: border-box;
         }
 
-        html, body {
+        html,
+        body {
             margin: 0;
             padding: 0;
+
             width: 100%;
             height: 100%;
+
             overflow: hidden;
+
             background: black;
         }
 
+
+        /* -------------------------
+           CAMERA
+           ------------------------- */
+
         #camera {
             position: fixed;
+
             top: 0;
             left: 0;
 
@@ -33,18 +47,37 @@
             height: 100%;
 
             object-fit: cover;
+
+            z-index: 1;
         }
+
+
+        /* -------------------------
+           GAME OVERLAY
+           ------------------------- */
 
         #game {
             position: fixed;
+
             top: 0;
             left: 0;
 
             width: 100%;
             height: 100%;
 
+            z-index: 2;
+
+            /*
+             * The overlay itself should not
+             * block touches.
+             */
             pointer-events: none;
         }
+
+
+        /* -------------------------
+           RED BALL
+           ------------------------- */
 
         #ball {
             position: absolute;
@@ -53,12 +86,27 @@
             height: 70px;
 
             background: red;
+
             border-radius: 50%;
 
             transform: translate(-50%, -50%);
 
+            /*
+             * Allow the player to touch
+             * the ball.
+             */
             pointer-events: auto;
+
+            /*
+             * Make it easier to see.
+             */
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
         }
+
+
+        /* -------------------------
+           START BUTTON
+           ------------------------- */
 
         #startButton {
             position: absolute;
@@ -73,40 +121,91 @@
             font-size: 20px;
 
             z-index: 10;
+
+            /*
+             * IMPORTANT:
+             * The game overlay has
+             * pointer-events: none.
+             *
+             * We must explicitly allow
+             * the button to receive touches.
+             */
+            pointer-events: auto;
         }
+
     </style>
+
 </head>
+
 
 <body>
 
-    <!-- Camera -->
+
+    <!--
+        Camera video.
+
+        The phone camera stream will
+        be placed inside this element.
+    -->
+
     <video id="camera"
            autoplay
            playsinline>
     </video>
 
-    <!-- Game graphics -->
+
+    <!--
+        Everything inside this element
+        appears on top of the camera.
+    -->
+
     <div id="game">
 
+
+        <!-- Red target -->
         <div id="ball"></div>
 
+
+        <!-- Start button -->
         <button id="startButton">
             Start Game
         </button>
 
+
     </div>
+
 
     <script>
 
-        const camera = document.getElementById("camera");
-        const ball = document.getElementById("ball");
-        const startButton = document.getElementById("startButton");
+
+        /* -------------------------
+           GET HTML ELEMENTS
+           ------------------------- */
+
+        const camera =
+            document.getElementById("camera");
+
+        const ball =
+            document.getElementById("ball");
+
+        const startButton =
+            document.getElementById("startButton");
 
 
-        // Start the camera
+        /* -------------------------
+           START CAMERA
+           ------------------------- */
+
         async function startCamera() {
 
+            console.log("Start button pressed");
+
             try {
+
+                /*
+                 * Ask the browser for the
+                 * rear-facing camera.
+                 */
 
                 const stream =
                     await navigator.mediaDevices.getUserMedia({
@@ -118,74 +217,185 @@
                         },
 
                         audio: false
+
                     });
+
+
+                /*
+                 * Give the camera stream
+                 * to the video element.
+                 */
 
                 camera.srcObject = stream;
 
-            } catch (error) {
+                console.log("Camera started");
 
-                console.error("Camera error:", error);
+            }
+
+            catch (error) {
+
+                console.error(
+                    "Camera error:",
+                    error
+                );
 
                 alert(
                     "Could not access the camera.\n\n" +
-                    error.name + ": " +
+                    "Error: " +
+                    error.name +
+                    "\n\n" +
                     error.message
                 );
+
             }
+
         }
 
 
-        // Put the ball somewhere random
+        /* -------------------------
+           MOVE BALL
+           ------------------------- */
+
         function moveBall() {
 
+            /*
+             * Size of our ball.
+             */
+
             const ballSize = 70;
+
+
+            /*
+             * Choose a random X position.
+             */
 
             const x =
                 Math.random() *
                 (window.innerWidth - ballSize)
-                + ballSize / 2;
+                +
+                ballSize / 2;
+
+
+            /*
+             * Choose a random Y position.
+             */
 
             const y =
                 Math.random() *
                 (window.innerHeight - ballSize)
-                + ballSize / 2;
+                +
+                ballSize / 2;
+
+
+            /*
+             * Apply the position.
+             */
 
             ball.style.left = x + "px";
+
             ball.style.top = y + "px";
+
+
+            console.log(
+                "Ball moved to:",
+                x,
+                y
+            );
+
         }
 
 
-        // Start button
-        startButton.addEventListener("click", async function() {
+        /* -------------------------
+           START BUTTON
+           ------------------------- */
 
-            startButton.style.display = "none";
+        startButton.addEventListener(
+            "click",
+            async function() {
 
-            await startCamera();
-
-            moveBall();
-
-        });
-
-
-        // Ball touched
-        ball.addEventListener("click", function() {
-
-            console.log("Ball caught!");
-
-            ball.style.display = "none";
+                console.log(
+                    "Start Game clicked"
+                );
 
 
-            setTimeout(function() {
+                /*
+                 * Hide the button.
+                 */
+
+                startButton.style.display =
+                    "none";
+
+
+                /*
+                 * Start camera.
+                 */
+
+                await startCamera();
+
+
+                /*
+                 * Put the ball somewhere
+                 * on the screen.
+                 */
 
                 moveBall();
 
-                ball.style.display = "block";
+            }
+        );
 
-            }, 500);
 
-        });
+        /* -------------------------
+           BALL TOUCHED
+           ------------------------- */
+
+        ball.addEventListener(
+            "click",
+            function() {
+
+                console.log(
+                    "Ball caught!"
+                );
+
+
+                /*
+                 * Hide the ball.
+                 */
+
+                ball.style.display =
+                    "none";
+
+
+                /*
+                 * Wait half a second,
+                 * then create a new target.
+                 */
+
+                setTimeout(
+                    function() {
+
+                        moveBall();
+
+                        ball.style.display =
+                            "block";
+
+                    },
+                    500
+                );
+
+            }
+        );
+
+
+        /*
+         * Initially place the ball
+         * somewhere on the screen.
+         */
+
+        moveBall();
+
 
     </script>
 
 </body>
+
 </html>
