@@ -2,7 +2,6 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta name="viewport"
@@ -11,8 +10,7 @@
                    maximum-scale=1.0,
                    user-scalable=no">
 
-    <title>Catch the Red Ball</title>
-
+    <title>Stride Quest - IMU POC</title>
 
     <style>
 
@@ -20,767 +18,1214 @@
             box-sizing: border-box;
         }
 
-
-        html,
         body {
-
             margin: 0;
             padding: 0;
 
+            background: #071018;
+            color: white;
+
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            min-height: 100vh;
+
+            touch-action: manipulation;
+        }
+
+        .container {
             width: 100%;
-            height: 100%;
+            max-width: 700px;
 
-            overflow: hidden;
+            margin: auto;
 
-            background: black;
+            padding:
+                20px
+                15px
+                40px;
         }
 
+        h1 {
+            text-align: center;
 
-        /* =========================
-           CAMERA
-           ========================= */
+            margin:
+                5px
+                0
+                5px;
 
-        #camera {
+            font-size: 28px;
+        }
 
-            position: fixed;
+        .subtitle {
+            text-align: center;
 
-            top: 0;
-            left: 0;
+            color: #9fb2bf;
+
+            font-size: 13px;
+
+            margin-bottom: 20px;
+        }
+
+        .panel {
+
+            background: #0d1b26;
+
+            border:
+                1px solid
+                #1d3748;
+
+            border-radius: 18px;
+
+            padding: 16px;
+
+            margin-bottom: 14px;
+        }
+
+        .panel h2 {
+
+            font-size: 18px;
+
+            margin-top: 0;
+        }
+
+        .description {
+
+            color: #aabcc7;
+
+            font-size: 14px;
+
+            line-height: 1.5;
+        }
+
+        button {
 
             width: 100%;
-            height: 100%;
 
-            object-fit: cover;
+            border: none;
 
-            z-index: 1;
+            border-radius: 14px;
+
+            padding: 15px;
+
+            margin-top: 10px;
+
+            font-size: 17px;
+
+            font-weight: bold;
+
+            background: #62d7ff;
+
+            color: #031018;
         }
 
+        button.secondary {
 
-        /* =========================
-           GAME
-           ========================= */
+            background: #183444;
 
-        #game {
-
-            position: fixed;
-
-            top: 0;
-            left: 0;
-
-            width: 100%;
-            height: 100%;
-
-            z-index: 2;
-
-            pointer-events: none;
+            color: white;
         }
 
+        button.danger {
 
-        /* =========================
-           PLAYER BALL
-           ========================= */
+            background: #4b2029;
 
-        #ball {
-
-            position: absolute;
-
-            width: 60px;
-            height: 60px;
-
-            background: red;
-
-            border-radius: 50%;
-
-            transform:
-                translate(-50%, -50%);
-
-            pointer-events: none;
-
-            box-shadow:
-                0 0 18px
-                rgba(255, 0, 0, 0.9);
+            color: #ffdfe2;
         }
 
+        button:disabled {
 
-        /* =========================
-           TARGET
-           ========================= */
-
-        #target {
-
-            position: absolute;
-
-            width: 90px;
-            height: 90px;
-
-            border: 5px solid white;
-
-            border-radius: 50%;
-
-            transform:
-                translate(-50%, -50%);
-
-            pointer-events: none;
-
-            box-shadow:
-                0 0 15px
-                rgba(255, 255, 255, 0.8);
-
-            animation:
-                targetPulse 1.2s
-                infinite;
+            opacity: 0.4;
         }
 
-
-        #target::after {
-
-            content: "";
-
-            position: absolute;
-
-            width: 25px;
-            height: 25px;
-
-            left: 50%;
-            top: 50%;
-
-            transform:
-                translate(-50%, -50%);
-
-            background: white;
-
-            border-radius: 50%;
-        }
-
-
-        /* =========================
-           TARGET ANIMATION
-           ========================= */
-
-        @keyframes targetPulse {
-
-            0% {
-                transform:
-                    translate(-50%, -50%)
-                    scale(1);
-            }
-
-            50% {
-                transform:
-                    translate(-50%, -50%)
-                    scale(1.08);
-            }
-
-            100% {
-                transform:
-                    translate(-50%, -50%)
-                    scale(1);
-            }
-
-        }
-
-
-        /* =========================
-           CONTROLS
-           ========================= */
-
-        #controls {
-
-            position: absolute;
-
-            bottom: 30px;
-            left: 50%;
-
-            transform:
-                translateX(-50%);
+        .input-row {
 
             display: flex;
 
             gap: 10px;
 
-            z-index: 30;
-
-            pointer-events: auto;
+            margin-bottom: 10px;
         }
 
+        .input-group {
 
-        button {
-
-            padding: 12px 18px;
-
-            font-size: 16px;
-
-            border: none;
-
-            border-radius: 8px;
-
-            background: white;
-
-            color: black;
+            flex: 1;
         }
 
+        label {
 
-        button:disabled {
+            display: block;
 
-            opacity: 0.5;
+            font-size: 12px;
+
+            color: #9fb2bf;
+
+            margin-bottom: 5px;
         }
 
+        input {
 
-        /* =========================
-           STATUS
-           ========================= */
+            width: 100%;
 
-        #status {
+            padding: 11px;
 
-            position: absolute;
+            border-radius: 10px;
 
-            top: 20px;
-            left: 20px;
-            right: 20px;
+            border:
+                1px solid
+                #294757;
 
-            padding: 12px;
-
-            background:
-                rgba(0, 0, 0, 0.65);
+            background: #07141d;
 
             color: white;
 
-            font-family: Arial, sans-serif;
-
             font-size: 16px;
-
-            border-radius: 8px;
-
-            z-index: 30;
-
-            pointer-events: none;
-
-            text-align: center;
         }
 
+        #game {
 
-        /* =========================
-           SCORE
-           ========================= */
+            display: none;
+        }
 
-        #score {
+        #phase {
 
-            position: absolute;
+            color: #62d7ff;
 
-            top: 85px;
-            right: 20px;
+            font-size: 13px;
 
-            padding: 10px 15px;
+            font-weight: bold;
 
-            background:
-                rgba(0, 0, 0, 0.65);
+            letter-spacing: 2px;
 
-            color: white;
+            text-transform: uppercase;
+        }
 
-            font-family: Arial, sans-serif;
+        #message {
 
             font-size: 20px;
 
             font-weight: bold;
 
-            border-radius: 8px;
+            min-height: 30px;
 
-            z-index: 30;
-
-            pointer-events: none;
+            margin-top: 5px;
         }
 
+        .stats {
 
-        /* =========================
-           DEBUG BUTTON
-           ========================= */
+            display: grid;
 
-        #debugButton {
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 8px;
+
+            margin-top: 15px;
+        }
+
+        .stat {
+
+            background: #102431;
+
+            border-radius: 12px;
+
+            padding: 10px;
+        }
+
+        .stat-label {
+
+            font-size: 11px;
+
+            color: #8fa4af;
+        }
+
+        .stat-value {
+
+            font-size: 21px;
+
+            font-weight: bold;
+
+            margin-top: 3px;
+        }
+
+        /*
+        ==================================================
+        COMPASS
+        ==================================================
+        */
+
+        .compass {
+
+            width: min(80vw, 350px);
+
+            height: min(80vw, 350px);
+
+            margin:
+                20px
+                auto;
+
+            position: relative;
+
+            border-radius: 50%;
+
+            border:
+                2px solid
+                #31505f;
+
+            background:
+                radial-gradient(
+                    circle,
+                    #102a38 0%,
+                    #0b1821 55%,
+                    #071018 100%
+                );
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+        }
+
+        /*
+        Compass direction labels
+        */
+
+        .direction {
 
             position: absolute;
 
-            top: 20px;
-            left: 20px;
+            font-weight: bold;
 
-            padding: 8px 12px;
+            color: #7f9aa7;
+
+            font-size: 13px;
+        }
+
+        .north {
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .east {
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .south {
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .west {
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /*
+        Player
+        */
+
+        .player {
+
+            width: 45px;
+
+            height: 45px;
+
+            border-radius: 50%;
+
+            background: #62d7ff;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 23px;
+
+            z-index: 5;
+        }
+
+        /*
+        Target arrow
+        */
+
+        #targetArrow {
+
+            position: absolute;
+
+            width: 0;
+
+            height: 0;
+
+            border-left:
+                20px solid transparent;
+
+            border-right:
+                20px solid transparent;
+
+            border-bottom:
+                85px solid #ff4654;
+
+            transform-origin:
+                50%
+                80%;
+
+            filter:
+                drop-shadow(
+                    0 0 10px
+                    rgba(255,70,84,.6)
+                );
+
+            transition:
+                transform
+                0.15s
+                linear;
+        }
+
+        #arrowLabel {
+
+            position: absolute;
+
+            bottom: 27%;
+
+            font-weight: bold;
 
             font-size: 13px;
 
-            z-index: 40;
-
-            pointer-events: auto;
-
-            background:
-                rgba(0, 0, 0, 0.65);
-
-            color: white;
-
-            border: 1px solid white;
+            letter-spacing: 2px;
         }
 
-
-        /* =========================
-           DEBUG PANEL
-           ========================= */
+        /*
+        Debug
+        */
 
         #debug {
 
-            position: absolute;
-
-            top: 65px;
-            left: 20px;
-
-            padding: 10px;
-
-            background:
-                rgba(0, 0, 0, 0.75);
-
-            color: white;
-
-            font-family: monospace;
-
-            font-size: 12px;
-
-            line-height: 1.5;
-
-            border-radius: 8px;
-
-            z-index: 35;
-
-            pointer-events: none;
-
             display: none;
+
+            background: #050c11;
+
+            padding: 12px;
+
+            border-radius: 10px;
+
+            font-family:
+                monospace;
+
+            font-size: 11px;
+
+            line-height: 1.6;
+
+            color: #b9ccd6;
+
+            white-space: pre-wrap;
         }
 
+        .success {
 
-        /* =========================
-           HIDDEN
-           ========================= */
+            animation:
+                successFlash
+                0.5s
+                ease
+                2;
+        }
 
-        .hidden {
+        @keyframes successFlash {
 
-            display: none !important;
+            50% {
 
+                transform: scale(1.08);
+
+                filter: brightness(2);
+
+            }
+        }
+
+        .footer {
+
+            text-align: center;
+
+            color: #6d838e;
+
+            font-size: 11px;
+
+            margin-top: 20px;
         }
 
     </style>
-
 </head>
 
 
 <body>
 
+<div class="container">
 
-<!-- =========================
-     CAMERA
-     ========================= -->
+    <h1>🎯 Stride Quest</h1>
 
-<video id="camera"
-       autoplay
-       playsinline>
-</video>
-
-
-<!-- =========================
-     GAME
-     ========================= -->
-
-<div id="game">
-
-
-    <!-- Red player ball -->
-
-    <div id="ball"></div>
-
-
-    <!-- Target -->
-
-    <div id="target"></div>
-
-
-    <!-- Status -->
-
-    <div id="status">
-
-        Place phone flat on table,
-        then press Calibrate.
-
+    <div class="subtitle">
+        Phone IMU Proof of Concept
     </div>
 
 
-    <!-- Score -->
+    <!-- ==================================================
+         SETUP
+         ================================================== -->
 
-    <div id="score">
+    <div id="setup" class="panel">
 
-        Score: 0
+        <h2>Setup</h2>
 
-    </div>
+        <div class="description">
 
+            Stand at the centre of the room.
 
-    <!-- Debug button -->
+            <br><br>
 
-    <button id="debugButton">
+            Keep the phone in the same orientation
+            that you intend to carry it during the game.
 
-        Debug
+            <br><br>
 
-    </button>
+            First enable the motion sensors,
+            then calibrate HOME.
 
-
-    <!-- Debug information -->
-
-    <div id="debug">
-
-        Beta:
-        <span id="beta">---</span>
-
-        <br>
-
-        Gamma:
-        <span id="gamma">---</span>
-
-        <br>
-
-        Calibrated Beta:
-        <span id="calBeta">---</span>
-
-        <br>
-
-        Calibrated Gamma:
-        <span id="calGamma">---</span>
-
-        <br>
-
-        Velocity X:
-        <span id="velocityX">0</span>
-
-        <br>
-
-        Velocity Y:
-        <span id="velocityY">0</span>
-
-    </div>
+        </div>
 
 
-    <!-- Controls -->
+        <div class="input-row">
 
-    <div id="controls">
+            <div class="input-group">
 
-        <button id="calibrateButton">
-            Calibrate
+                <label>
+                    Room width (m)
+                </label>
+
+                <input
+                    id="roomWidth"
+                    type="number"
+                    value="5"
+                    min="2"
+                    max="30"
+                    step="0.1">
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>
+                    Room length (m)
+                </label>
+
+                <input
+                    id="roomLength"
+                    type="number"
+                    value="7"
+                    min="2"
+                    max="30"
+                    step="0.1">
+
+            </div>
+
+        </div>
+
+
+        <div class="input-row">
+
+            <div class="input-group">
+
+                <label>
+                    Minimum target steps
+                </label>
+
+                <input
+                    id="minSteps"
+                    type="number"
+                    value="4"
+                    min="2"
+                    max="15">
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>
+                    Maximum target steps
+                </label>
+
+                <input
+                    id="maxSteps"
+                    type="number"
+                    value="7"
+                    min="2"
+                    max="20">
+
+            </div>
+
+        </div>
+
+
+        <button id="enableSensors">
+
+            📱 Enable Motion Sensors
+
         </button>
 
-        <button id="startButton">
-            Start Game
+
+        <button
+            id="calibrateHome"
+            class="secondary"
+            disabled>
+
+            🏠 Calibrate HOME
+
+        </button>
+
+
+        <div
+            id="setupMessage"
+            class="description"
+            style="margin-top:12px">
+
+            Waiting for sensor permission.
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ==================================================
+         GAME
+         ================================================== -->
+
+    <div
+        id="game"
+        class="panel">
+
+        <div id="phase">
+            READY
+        </div>
+
+
+        <div id="message">
+
+            Ready at HOME.
+
+        </div>
+
+
+        <!-- STATS -->
+
+        <div class="stats">
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    SCORE
+                </div>
+
+                <div
+                    class="stat-value"
+                    id="score">
+
+                    0
+
+                </div>
+
+            </div>
+
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    ROUND
+                </div>
+
+                <div
+                    class="stat-value"
+                    id="round">
+
+                    0
+
+                </div>
+
+            </div>
+
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    STEPS
+                </div>
+
+                <div
+                    class="stat-value"
+                    id="steps">
+
+                    0
+
+                </div>
+
+            </div>
+
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    HEADING
+                </div>
+
+                <div
+                    class="stat-value"
+                    id="heading">
+
+                    —
+
+                </div>
+
+            </div>
+
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    HOME DIST.
+                </div>
+
+                <div
+                    class="stat-value"
+                    id="homeDistance">
+
+                    0.0m
+
+                </div>
+
+            </div>
+
+
+            <div class="stat">
+
+                <div class="stat-label">
+                    SENSOR
+                </div>
+
+                <div
+                    class="stat-value"
+                    id="sensorStatus">
+
+                    OFF
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ==================================================
+             COMPASS
+             ================================================== -->
+
+        <div
+            id="compass"
+            class="compass">
+
+
+            <div
+                class="direction north">
+
+                N
+
+            </div>
+
+
+            <div
+                class="direction east">
+
+                E
+
+            </div>
+
+
+            <div
+                class="direction south">
+
+                S
+
+            </div>
+
+
+            <div
+                class="direction west">
+
+                W
+
+            </div>
+
+
+            <!-- Target arrow -->
+
+            <div
+                id="targetArrow">
+            </div>
+
+
+            <div
+                id="arrowLabel">
+
+                TARGET
+
+            </div>
+
+
+            <!-- Player -->
+
+            <div class="player">
+
+                🧍
+
+            </div>
+
+        </div>
+
+
+
+        <div
+            id="targetInfo"
+            style="
+            text-align:center;
+            color:#9fb2bf;
+            margin-bottom:10px;">
+
+            Target: —
+
+        </div>
+
+
+
+        <button id="startGame">
+
+            ▶️ Start Game
+
+        </button>
+
+
+        <button
+            id="jumpCalibration"
+            class="secondary">
+
+            🦘 HOME Jump / Recalibrate
+
+        </button>
+
+
+        <button
+            id="debugButton"
+            class="secondary">
+
+            Show Sensor Debug
+
+        </button>
+
+
+        <div
+            id="debug"
+            style="margin-top:10px">
+        </div>
+
+
+        <button
+            id="resetGame"
+            class="danger">
+
+            Reset Game
+
         </button>
 
     </div>
 
+
+    <div class="footer">
+
+        Experimental IMU prototype.
+        Position is approximate and intentionally
+        designed for testing the gameplay concept.
+
+    </div>
 
 </div>
 
 
+
 <script>
 
-
-/* =========================
-   HTML ELEMENTS
-   ========================= */
-
-const camera =
-    document.getElementById(
-        "camera"
-    );
+"use strict";
 
 
-const ball =
-    document.getElementById(
-        "ball"
-    );
+/*
+==========================================================
+GLOBAL GAME STATE
+==========================================================
+*/
 
+let sensorsEnabled = false;
 
-const target =
-    document.getElementById(
-        "target"
-    );
+let gameRunning = false;
 
-
-const statusDisplay =
-    document.getElementById(
-        "status"
-    );
-
-
-const scoreDisplay =
-    document.getElementById(
-        "score"
-    );
-
-
-const calibrateButton =
-    document.getElementById(
-        "calibrateButton"
-    );
-
-
-const startButton =
-    document.getElementById(
-        "startButton"
-    );
-
-
-const debugButton =
-    document.getElementById(
-        "debugButton"
-    );
-
-
-const debugPanel =
-    document.getElementById(
-        "debug"
-    );
-
-
-const betaDisplay =
-    document.getElementById(
-        "beta"
-    );
-
-
-const gammaDisplay =
-    document.getElementById(
-        "gamma"
-    );
-
-
-const calBetaDisplay =
-    document.getElementById(
-        "calBeta"
-    );
-
-
-const calGammaDisplay =
-    document.getElementById(
-        "calGamma"
-    );
-
-
-const velocityXDisplay =
-    document.getElementById(
-        "velocityX"
-    );
-
-
-const velocityYDisplay =
-    document.getElementById(
-        "velocityY"
-    );
-
-
-/* =========================
-   BALL POSITION
-   ========================= */
-
-let ballX =
-    window.innerWidth / 2;
-
-let ballY =
-    window.innerHeight / 2;
-
-
-/* =========================
-   BALL VELOCITY
-   ========================= */
-
-let velocityX = 0;
-
-let velocityY = 0;
-
-
-/* =========================
-   TARGET POSITION
-   ========================= */
-
-let targetX =
-    window.innerWidth * 0.75;
-
-let targetY =
-    window.innerHeight * 0.5;
-
-
-/* =========================
-   SENSOR VALUES
-   ========================= */
-
-let lastBeta = null;
-
-let lastGamma = null;
-
-let calibratedBeta = null;
-
-let calibratedGamma = null;
-
-let sensorActive = false;
-
-
-/* =========================
-   GAME STATE
-   ========================= */
-
-let gameStarted = false;
+let gamePhase = "idle";
 
 let score = 0;
 
+let round = 0;
 
-/* =========================
-   PHYSICS SETTINGS
-   ========================= */
-
-const acceleration =
-    0.15;
-
-const maxSpeed =
-    8;
-
-const friction =
-    0.92;
-
-const deadZone =
-    3;
+let stepCount = 0;
 
 
-/* =========================
-   COLLISION SETTINGS
-   ========================= */
+/*
+==========================================================
+ORIENTATION
+==========================================================
+*/
 
-const ballRadius =
-    30;
+let heading = 0;
 
-const targetRadius =
-    45;
+let headingReference = 0;
 
-const catchDistance =
-    ballRadius +
-    targetRadius;
+let headingAvailable = false;
 
 
-/* =========================
-   DEBUG BUTTON
-   ========================= */
+/*
+==========================================================
+POSITION
+==========================================================
+*/
 
-debugButton.addEventListener(
-    "click",
-    function() {
+/*
+x = east/west
 
-        if (
-            debugPanel.style.display ===
-            "block"
-        ) {
+y = north/south
 
-            debugPanel.style.display =
-                "none";
+This is NOT real GPS.
 
-            debugButton.textContent =
-                "Debug";
+It is an estimated position
+calculated from steps.
+*/
 
-        }
+let playerX = 0;
 
-        else {
+let playerY = 0;
 
-            debugPanel.style.display =
-                "block";
+let homeX = 0;
 
-            debugButton.textContent =
-                "Hide Debug";
+let homeY = 0;
 
-        }
+let targetX = 0;
 
-    }
-);
+let targetY = 0;
 
 
-/* =========================
-   CAMERA
-   ========================= */
+/*
+==========================================================
+TARGET
+==========================================================
+*/
 
-async function startCamera() {
+let targetSteps = 0;
+
+
+/*
+==========================================================
+STEP DETECTION
+==========================================================
+*/
+
+let lastStepTime = 0;
+
+let stepCandidateTime = 0;
+
+let highAcceleration = false;
+
+
+/*
+Approximate human stride.
+
+We deliberately start with
+a simple value.
+
+We can later calibrate this.
+*/
+
+const STRIDE_LENGTH = 0.70;
+
+
+/*
+==========================================================
+ACCELERATION
+==========================================================
+*/
+
+let accelerationMagnitude = 9.81;
+
+let accelerationBaseline = 9.81;
+
+
+/*
+==========================================================
+JUMP DETECTION
+==========================================================
+*/
+
+let jumpState = 0;
+
+let jumpStartTime = 0;
+
+let lastJumpTime = 0;
+
+
+/*
+==========================================================
+DEBUG
+==========================================================
+*/
+
+let debugVisible = false;
+
+let lastAcceleration = {
+    x:0,
+    y:0,
+    z:0
+};
+
+let lastRotation = {
+    alpha:0,
+    beta:0,
+    gamma:0
+};
+
+let lastOrientation = {
+    alpha:null,
+    beta:null,
+    gamma:null
+};
+
+
+
+/*
+==========================================================
+UTILITY FUNCTIONS
+==========================================================
+*/
+
+
+function normalize360(angle) {
+
+    return (
+        (angle % 360) +
+        360
+    ) % 360;
+
+}
+
+
+function normalize180(angle) {
+
+    return (
+        (angle + 180) %
+        360 +
+        360
+    ) % 360 - 180;
+
+}
+
+
+function radians(degrees) {
+
+    return degrees *
+           Math.PI /
+           180;
+
+}
+
+
+function degrees(radiansValue) {
+
+    return radiansValue *
+           180 /
+           Math.PI;
+
+}
+
+
+/*
+==========================================================
+SOUND
+==========================================================
+*/
+
+function beep(
+    frequency = 880,
+    duration = 0.12
+) {
 
     try {
 
-        const stream =
-            await navigator.mediaDevices
-                .getUserMedia({
+        const AudioContext =
+            window.AudioContext ||
+            window.webkitAudioContext;
 
-                    video: {
+        if (!AudioContext)
+            return;
 
-                        facingMode: {
-                            ideal:
-                                "environment"
-                        }
-
-                    },
-
-                    audio: false
-
-                });
+        const context =
+            beep.context ||
+            (beep.context =
+                new AudioContext());
 
 
-        camera.srcObject =
-            stream;
+        const oscillator =
+            context.createOscillator();
+
+        const gain =
+            context.createGain();
 
 
-        return true;
+        oscillator.type = "sine";
 
-    }
+        oscillator.frequency.value =
+            frequency;
 
-    catch (error) {
 
-        console.error(
-            "Camera error:",
-            error
+        gain.gain.setValueAtTime(
+            0.0001,
+            context.currentTime
         );
 
 
-        statusDisplay.textContent =
-            "Camera error: " +
-            error.message;
+        gain.gain.exponentialRampToValueAtTime(
+            0.15,
+            context.currentTime + 0.01
+        );
 
 
-        return false;
+        gain.gain.exponentialRampToValueAtTime(
+            0.0001,
+            context.currentTime + duration
+        );
+
+
+        oscillator
+            .connect(gain)
+            .connect(context.destination);
+
+
+        oscillator.start();
+
+        oscillator.stop(
+            context.currentTime +
+            duration +
+            0.02
+        );
+
+    }
+
+    catch(error) {
+
+        console.log(
+            "Audio error:",
+            error
+        );
 
     }
 
 }
 
 
-/* =========================
-   START SENSOR
-   ========================= */
+/*
+==========================================================
+VIBRATION
+==========================================================
+*/
 
-async function startSensors() {
+function vibrate(pattern) {
 
     if (
-        sensorActive
+        "vibrate" in navigator
     ) {
 
-        return true;
+        navigator.vibrate(
+            pattern
+        );
 
     }
 
+}
 
-    /*
-     * iPhone Safari.
-     */
 
-    if (
-        typeof DeviceOrientationEvent !==
-        "undefined" &&
+/*
+==========================================================
+REQUEST SENSOR PERMISSION
+==========================================================
+*/
 
-        typeof DeviceOrientationEvent
-            .requestPermission ===
-        "function"
-    ) {
+async function enableSensors() {
 
-        try {
+    try {
+
+        /*
+        iPhone requires permission
+        to access motion sensors.
+        */
+
+        if (
+            typeof DeviceMotionEvent !==
+            "undefined" &&
+
+            typeof DeviceMotionEvent
+                .requestPermission ===
+                "function"
+        ) {
+
+            const permission =
+                await DeviceMotionEvent
+                    .requestPermission();
+
+
+            if (
+                permission !== "granted"
+            ) {
+
+                throw new Error(
+                    "Motion permission denied."
+                );
+
+            }
+
+        }
+
+
+        /*
+        Orientation permission
+        */
+
+        if (
+            typeof DeviceOrientationEvent !==
+            "undefined" &&
+
+            typeof DeviceOrientationEvent
+                .requestPermission ===
+                "function"
+        ) {
 
             const permission =
                 await DeviceOrientationEvent
@@ -788,117 +1233,628 @@ async function startSensors() {
 
 
             if (
-                permission !==
-                "granted"
+                permission !== "granted"
             ) {
 
-                statusDisplay.textContent =
-                    "Motion permission denied.";
-
-                return false;
+                throw new Error(
+                    "Orientation permission denied."
+                );
 
             }
 
         }
 
-        catch (error) {
 
-            console.error(
-                "Motion permission error:",
-                error
+        /*
+        Start listening
+        */
+
+        window.addEventListener(
+            "devicemotion",
+            handleMotion,
+            {
+                passive:true
+            }
+        );
+
+
+        window.addEventListener(
+            "deviceorientationabsolute",
+            handleOrientation,
+            {
+                passive:true
+            }
+        );
+
+
+        window.addEventListener(
+            "deviceorientation",
+            handleOrientation,
+            {
+                passive:true
+            }
+        );
+
+
+        sensorsEnabled = true;
+
+
+        document
+            .getElementById(
+                "calibrateHome"
+            )
+            .disabled = false;
+
+
+        document
+            .getElementById(
+                "sensorStatus"
+            )
+            .textContent =
+            "LIVE";
+
+
+        document
+            .getElementById(
+                "setupMessage"
+            )
+            .textContent =
+            "Sensors enabled. Stand at HOME and tap Calibrate HOME.";
+
+
+        beep(900,0.08);
+
+    }
+
+    catch(error) {
+
+        document
+            .getElementById(
+                "setupMessage"
+            )
+            .textContent =
+            "Sensor permission failed: " +
+            error.message +
+            " — use Safari over HTTPS.";
+
+    }
+
+}
+
+
+
+/*
+==========================================================
+ORIENTATION
+==========================================================
+*/
+
+function handleOrientation(event) {
+
+    lastOrientation = {
+
+        alpha:event.alpha,
+
+        beta:event.beta,
+
+        gamma:event.gamma
+
+    };
+
+
+    let newHeading = null;
+
+
+    /*
+    iOS Safari sometimes provides
+    webkitCompassHeading.
+    */
+
+    if (
+        typeof event.webkitCompassHeading ===
+        "number" &&
+
+        isFinite(
+            event.webkitCompassHeading
+        )
+    ) {
+
+        newHeading =
+            event.webkitCompassHeading;
+
+    }
+
+
+    /*
+    Fallback.
+    */
+
+    else if (
+        typeof event.alpha ===
+        "number"
+    ) {
+
+        newHeading =
+            normalize360(
+                360 -
+                event.alpha
+            );
+
+    }
+
+
+    if (
+        newHeading !== null &&
+        isFinite(newHeading)
+    ) {
+
+        heading =
+            newHeading;
+
+        headingAvailable =
+            true;
+
+
+        document
+            .getElementById(
+                "heading"
+            )
+            .textContent =
+            Math.round(
+                heading
+            ) + "°";
+
+    }
+
+}
+
+
+
+/*
+==========================================================
+MOTION SENSOR
+==========================================================
+*/
+
+function handleMotion(event) {
+
+    const acceleration =
+        event.accelerationIncludingGravity;
+
+
+    if (acceleration) {
+
+        const x =
+            acceleration.x || 0;
+
+        const y =
+            acceleration.y || 0;
+
+        const z =
+            acceleration.z || 0;
+
+
+        lastAcceleration = {
+
+            x:x,
+            y:y,
+            z:z
+
+        };
+
+
+        const magnitude =
+            Math.sqrt(
+                x*x +
+                y*y +
+                z*z
             );
 
 
-            statusDisplay.textContent =
-                "Motion permission error: " +
-                error.message;
+        accelerationMagnitude =
+            (
+                accelerationMagnitude *
+                0.82
+            ) +
+            (
+                magnitude *
+                0.18
+            );
 
 
-            return false;
+        /*
+        Slowly adapt the baseline.
+        */
+
+        accelerationBaseline =
+            (
+                accelerationBaseline *
+                0.995
+            ) +
+            (
+                magnitude *
+                0.005
+            );
+
+
+        detectSteps(
+            magnitude
+        );
+
+
+        detectJump(
+            magnitude
+        );
+
+    }
+
+
+    if (
+        event.rotationRate
+    ) {
+
+        lastRotation = {
+
+            alpha:
+                event.rotationRate.alpha || 0,
+
+            beta:
+                event.rotationRate.beta || 0,
+
+            gamma:
+                event.rotationRate.gamma || 0
+
+        };
+
+    }
+
+
+    document
+        .getElementById(
+            "sensorStatus"
+        )
+        .textContent =
+        "LIVE";
+
+}
+
+
+
+/*
+==========================================================
+STEP DETECTION
+==========================================================
+*/
+
+
+function detectSteps(
+    magnitude
+) {
+
+    const now =
+        performance.now();
+
+
+    const difference =
+        magnitude -
+        accelerationBaseline;
+
+
+    /*
+    Detect acceleration peak.
+    */
+
+    if (
+
+        difference > 1.15 &&
+
+        !highAcceleration &&
+
+        (
+            now -
+            lastStepTime
+        ) > 280
+
+    ) {
+
+        highAcceleration = true;
+
+        stepCandidateTime =
+            now;
+
+    }
+
+
+    /*
+    Reset peak state.
+    */
+
+    if (
+        highAcceleration &&
+        difference < 0.15
+    ) {
+
+        highAcceleration =
+            false;
+
+    }
+
+
+    /*
+    Look for the following
+    acceleration valley.
+    */
+
+    if (
+
+        stepCandidateTime > 0 &&
+
+        (
+            now -
+            stepCandidateTime
+        ) < 1800 &&
+
+        difference < -0.35
+
+    ) {
+
+        registerStep();
+
+        lastStepTime =
+            now;
+
+        stepCandidateTime =
+            0;
+
+    }
+
+
+    /*
+    Give up if the event
+    takes too long.
+    */
+
+    if (
+
+        stepCandidateTime > 0 &&
+
+        (
+            now -
+            stepCandidateTime
+        ) >= 1800
+
+    ) {
+
+        stepCandidateTime =
+            0;
+
+    }
+
+}
+
+
+
+/*
+==========================================================
+REGISTER STEP
+==========================================================
+*/
+
+function registerStep() {
+
+    stepCount++;
+
+
+    document
+        .getElementById(
+            "steps"
+        )
+        .textContent =
+        stepCount;
+
+
+    if (
+        !gameRunning
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+    Convert heading to
+    movement direction.
+    */
+
+    const currentHeading =
+        headingAvailable
+            ? heading
+            : headingReference;
+
+
+    const angle =
+        radians(
+            currentHeading
+        );
+
+
+    /*
+    North = +Y
+    East = +X
+    */
+
+    playerX +=
+        Math.sin(angle) *
+        STRIDE_LENGTH;
+
+
+    playerY +=
+        Math.cos(angle) *
+        STRIDE_LENGTH;
+
+
+    /*
+    Check game state.
+    */
+
+    if (
+        gamePhase ===
+        "target"
+    ) {
+
+        checkTarget();
+
+    }
+
+
+    if (
+        gamePhase ===
+        "return"
+    ) {
+
+        checkHome();
+
+    }
+
+}
+
+
+
+/*
+==========================================================
+JUMP DETECTION
+==========================================================
+*/
+
+function detectJump(
+    magnitude
+) {
+
+    const now =
+        performance.now();
+
+
+    const difference =
+        magnitude -
+        accelerationBaseline;
+
+
+    /*
+    Strong upward acceleration.
+    */
+
+    if (
+
+        difference > 3.0 &&
+
+        jumpState === 0
+
+    ) {
+
+        jumpState = 1;
+
+        jumpStartTime =
+            now;
+
+    }
+
+
+    /*
+    Low-G / airborne section.
+    */
+
+    else if (
+
+        jumpState === 1 &&
+
+        difference < 0.25
+
+    ) {
+
+        jumpState = 2;
+
+    }
+
+
+    /*
+    Strong landing event.
+    */
+
+    else if (
+
+        jumpState === 2 &&
+
+        difference > 3.0 &&
+
+        (
+            now -
+            jumpStartTime
+        ) > 180 &&
+
+        (
+            now -
+            lastJumpTime
+        ) > 900
+
+    ) {
+
+        jumpState = 0;
+
+        lastJumpTime =
+            now;
+
+
+        /*
+        Only accept jump
+        during HOME return.
+        */
+
+        if (
+            gamePhase ===
+            "return"
+        ) {
+
+            confirmHomeJump();
 
         }
 
     }
 
 
-    window.addEventListener(
-        "deviceorientation",
-        handleOrientation
-    );
+    /*
+    Timeout.
+    */
 
+    if (
 
-    sensorActive =
-        true;
+        jumpState !== 0 &&
 
+        (
+            now -
+            jumpStartTime
+        ) > 1800
 
-    statusDisplay.textContent =
-        "Sensor active. " +
-        "Hold phone still...";
+    ) {
 
+        jumpState = 0;
 
-    return true;
+    }
 
 }
 
 
-/* =========================
-   ORIENTATION
-   ========================= */
 
-function handleOrientation(event) {
+/*
+==========================================================
+CALIBRATE HOME
+==========================================================
+*/
 
-    if (
-        event.beta !== null
-    ) {
-
-        lastBeta =
-            event.beta;
-
-    }
-
+function calibrateHome() {
 
     if (
-        event.gamma !== null
-    ) {
-
-        lastGamma =
-            event.gamma;
-
-    }
-
-
-    /*
-     * Debug values.
-
-     */
-
-    if (
-        lastBeta !== null
-    ) {
-
-        betaDisplay.textContent =
-            lastBeta.toFixed(1);
-
-    }
-
-
-    if (
-        lastGamma !== null
-    ) {
-
-        gammaDisplay.textContent =
-            lastGamma.toFixed(1);
-
-    }
-
-
-    /*
-     * Don't control ball
-     * until game starts.
-     */
-
-    if (
-        !gameStarted
+        !sensorsEnabled
     ) {
 
         return;
@@ -906,111 +1862,362 @@ function handleOrientation(event) {
     }
 
 
-    if (
-        calibratedBeta === null ||
-        calibratedGamma === null
-    ) {
-
-        return;
-
-    }
+    document
+        .getElementById(
+            "phase"
+        )
+        .textContent =
+        "CALIBRATING";
 
 
-    let horizontalTilt =
-        lastGamma -
-        calibratedGamma;
+    document
+        .getElementById(
+            "message"
+        )
+        .textContent =
+        "Hold still…";
 
 
-    let verticalTilt =
-        lastBeta -
-        calibratedBeta;
+    document
+        .getElementById(
+            "calibrateHome"
+        )
+        .disabled = true;
 
 
-    /*
-     * Dead zone.
-     */
+    const samples = [];
 
-    if (
-        Math.abs(horizontalTilt)
-        < deadZone
-    ) {
-
-        horizontalTilt = 0;
-
-    }
+    const start =
+        performance.now();
 
 
-    if (
-        Math.abs(verticalTilt)
-        < deadZone
-    ) {
+    function collect() {
 
-        verticalTilt = 0;
+        if (
+            headingAvailable
+        ) {
 
-    }
+            samples.push(
+                heading
+            );
 
-
-    /*
-     * Apply acceleration.
-     */
-
-    velocityX +=
-        horizontalTilt *
-        acceleration;
-
-
-    velocityY +=
-        verticalTilt *
-        acceleration;
-
-
-    /*
-     * Limit speed.
-     */
-
-    velocityX =
-        Math.max(
-            -maxSpeed,
-            Math.min(
-                maxSpeed,
-                velocityX
-            )
-        );
-
-
-    velocityY =
-        Math.max(
-            -maxSpeed,
-            Math.min(
-                maxSpeed,
-                velocityY
-            )
-        );
-
-}
-
-
-/* =========================
-   CALIBRATION
-   ========================= */
-
-async function calibrate() {
-
-    /*
-     * Start sensors first.
-     */
-
-    if (
-        !sensorActive
-    ) {
-
-        const success =
-            await startSensors();
+        }
 
 
         if (
-            !success
+            performance.now() -
+            start <
+            1400
         ) {
+
+            requestAnimationFrame(
+                collect
+            );
+
+            return;
+
+        }
+
+
+        /*
+        Circular average
+        for compass heading.
+        */
+
+        if (
+            samples.length > 0
+        ) {
+
+            let sinSum = 0;
+
+            let cosSum = 0;
+
+
+            samples.forEach(
+                value => {
+
+                    sinSum +=
+                        Math.sin(
+                            radians(value)
+                        );
+
+                    cosSum +=
+                        Math.cos(
+                            radians(value)
+                        );
+
+                }
+            );
+
+
+            headingReference =
+                normalize360(
+                    degrees(
+                        Math.atan2(
+                            sinSum,
+                            cosSum
+                        )
+                    )
+                );
+
+        }
+
+        else {
+
+            headingReference =
+                heading;
+
+        }
+
+
+        /*
+        HOME position.
+        */
+
+        playerX = 0;
+
+        playerY = 0;
+
+        homeX = 0;
+
+        homeY = 0;
+
+
+        stepCount = 0;
+
+        score = 0;
+
+        round = 0;
+
+        gameRunning = false;
+
+        gamePhase = "idle";
+
+
+        document
+            .getElementById(
+                "score"
+            )
+            .textContent =
+            "0";
+
+
+        document
+            .getElementById(
+                "round"
+            )
+            .textContent =
+            "0";
+
+
+        document
+            .getElementById(
+                "steps"
+            )
+            .textContent =
+            "0";
+
+
+        document
+            .getElementById(
+                "homeDistance"
+            )
+            .textContent =
+            "0.0m";
+
+
+        document
+            .getElementById(
+                "phase"
+            )
+            .textContent =
+            "READY";
+
+
+        document
+            .getElementById(
+                "message"
+            )
+            .textContent =
+            "HOME calibrated. Ready!";
+
+
+        document
+            .getElementById(
+                "setupMessage"
+            )
+            .textContent =
+            "HOME calibrated successfully.";
+
+
+        document
+            .getElementById(
+                "calibrateHome"
+            )
+            .disabled = false;
+
+
+        /*
+        Show game.
+        */
+
+        document
+            .getElementById(
+                "game"
+            )
+            .style.display =
+            "block";
+
+
+        beep(
+            1100,
+            0.12
+        );
+
+
+        vibrate(80);
+
+    }
+
+
+    requestAnimationFrame(
+        collect
+    );
+
+}
+
+
+
+/*
+==========================================================
+GENERATE TARGET
+==========================================================
+*/
+
+function createTarget() {
+
+    const roomWidth =
+        parseFloat(
+            document
+                .getElementById(
+                    "roomWidth"
+                )
+                .value
+        ) || 5;
+
+
+    const roomLength =
+        parseFloat(
+            document
+                .getElementById(
+                    "roomLength"
+                )
+                .value
+        ) || 7;
+
+
+    let minimum =
+        parseInt(
+            document
+                .getElementById(
+                    "minSteps"
+                )
+                .value
+        ) || 4;
+
+
+    let maximum =
+        parseInt(
+            document
+                .getElementById(
+                    "maxSteps"
+                )
+                .value
+        ) || 7;
+
+
+    if (
+        maximum <
+        minimum
+    ) {
+
+        const temp =
+            minimum;
+
+        minimum =
+            maximum;
+
+        maximum =
+            temp;
+
+    }
+
+
+    targetSteps =
+        Math.floor(
+            minimum +
+            Math.random() *
+            (
+                maximum -
+                minimum +
+                1
+            )
+        );
+
+
+    /*
+    Convert steps to
+    approximate distance.
+    */
+
+    const distance =
+        targetSteps *
+        STRIDE_LENGTH;
+
+
+    /*
+    Try random directions
+    until the target fits
+    inside the room.
+    */
+
+    for (
+        let attempt = 0;
+        attempt < 100;
+        attempt++
+    ) {
+
+        const angle =
+            Math.random() *
+            Math.PI *
+            2;
+
+
+        const x =
+            Math.sin(angle) *
+            distance;
+
+
+        const y =
+            Math.cos(angle) *
+            distance;
+
+
+        if (
+
+            Math.abs(x) <=
+            roomWidth / 2 -
+            0.35 &&
+
+            Math.abs(y) <=
+            roomLength / 2 -
+            0.35
+
+        ) {
+
+            targetX = x;
+
+            targetY = y;
 
             return;
 
@@ -1020,352 +2227,773 @@ async function calibrate() {
 
 
     /*
-     * Wait for sensor data.
-     */
+    Fallback target:
+    straight ahead.
+    */
+
+    const fallbackDistance =
+        Math.min(
+            distance,
+            Math.min(
+                roomWidth,
+                roomLength
+            ) / 2 -
+            0.4
+        );
+
+
+    const angle =
+        radians(
+            headingReference
+        );
+
+
+    targetX =
+        Math.sin(angle) *
+        fallbackDistance;
+
+
+    targetY =
+        Math.cos(angle) *
+        fallbackDistance;
+
+}
+
+
+
+/*
+==========================================================
+START GAME
+==========================================================
+*/
+
+function startGame() {
 
     if (
-        lastBeta === null ||
-        lastGamma === null
+        !sensorsEnabled
     ) {
 
-        statusDisplay.textContent =
-            "Sensor active. " +
-            "Hold phone still...";
-
-
-        waitForSensorCalibration();
+        document
+            .getElementById(
+                "message"
+            )
+            .textContent =
+            "Enable the motion sensors first.";
 
         return;
 
     }
 
 
-    completeCalibration();
+    if (
+        gamePhase ===
+        "return"
+    ) {
+
+        document
+            .getElementById(
+                "message"
+            )
+            .textContent =
+            "Return HOME before starting another target.";
+
+        return;
+
+    }
+
+
+    gameRunning =
+        true;
+
+
+    round++;
+
+
+    stepCount =
+        0;
+
+
+    document
+        .getElementById(
+            "round"
+        )
+        .textContent =
+        round;
+
+
+    document
+        .getElementById(
+            "steps"
+        )
+        .textContent =
+        "0";
+
+
+    createTarget();
+
+
+    gamePhase =
+        "target";
+
+
+    document
+        .getElementById(
+            "phase"
+        )
+        .textContent =
+        "TARGET";
+
+
+    document
+        .getElementById(
+            "message"
+        )
+        .textContent =
+        "Follow the arrow to the ball!";
+
+
+    document
+        .getElementById(
+            "startGame"
+        )
+        .textContent =
+        "New Target";
+
+
+    beep(
+        700,
+        0.08
+    );
 
 }
 
 
-/* =========================
-   WAIT FOR SENSOR
-   ========================= */
 
-function waitForSensorCalibration() {
+/*
+==========================================================
+CHECK TARGET
+==========================================================
+*/
+
+function checkTarget() {
+
+    const dx =
+        targetX -
+        playerX;
+
+
+    const dy =
+        targetY -
+        playerY;
+
+
+    const distance =
+        Math.sqrt(
+            dx*dx +
+            dy*dy
+        );
+
+
+    updateCompass();
+
+
+    /*
+    Target reached.
+
+    We use both:
+    - estimated distance
+    - step count
+
+    because this is a POC.
+    */
+
+    if (
+
+        distance <=
+        0.85 ||
+
+        stepCount >=
+        targetSteps
+
+    ) {
+
+        gameRunning =
+            false;
+
+
+        score +=
+            10;
+
+
+        document
+            .getElementById(
+                "score"
+            )
+            .textContent =
+            score;
+
+
+        document
+            .getElementById(
+                "phase"
+            )
+            .textContent =
+            "TARGET REACHED";
+
+
+        document
+            .getElementById(
+                "message"
+            )
+            .textContent =
+            "🔴 PING! Target reached! +10";
+
+
+        beep(
+            1200,
+            0.14
+        );
+
+
+        setTimeout(
+            () => {
+
+                beep(
+                    1600,
+                    0.14
+                );
+
+            },
+            120
+        );
+
+
+        vibrate([
+            80,
+            70,
+            140
+        ]);
+
+
+        /*
+        After a short delay,
+        switch to HOME.
+        */
+
+        setTimeout(
+            beginReturnHome,
+            900
+        );
+
+    }
+
+}
+
+
+
+/*
+==========================================================
+RETURN HOME
+==========================================================
+*/
+
+function beginReturnHome() {
+
+    gameRunning =
+        true;
+
+
+    gamePhase =
+        "return";
+
+
+    /*
+    Target becomes HOME.
+    */
+
+    targetX =
+        homeX;
+
+
+    targetY =
+        homeY;
+
+
+    document
+        .getElementById(
+            "phase"
+        )
+        .textContent =
+        "RETURN HOME";
+
+
+    document
+        .getElementById(
+            "message"
+        )
+        .textContent =
+        "Follow HOME. Jump when you reach the centre.";
+
+
+    updateCompass();
+
+}
+
+
+
+/*
+==========================================================
+CHECK HOME
+==========================================================
+*/
+
+function checkHome() {
+
+    const dx =
+        playerX -
+        homeX;
+
+
+    const dy =
+        playerY -
+        homeY;
+
+
+    const distance =
+        Math.sqrt(
+            dx*dx +
+            dy*dy
+        );
+
+
+    document
+        .getElementById(
+            "homeDistance"
+        )
+        .textContent =
+        distance.toFixed(1) +
+        "m";
+
+
+    if (
+        distance <=
+        1.05
+    ) {
+
+        document
+            .getElementById(
+                "message"
+            )
+            .textContent =
+            "🏠 HOME reached — JUMP to recalibrate.";
+
+    }
+
+}
+
+
+
+/*
+==========================================================
+HOME JUMP
+==========================================================
+*/
+
+function confirmHomeJump() {
+
+    const dx =
+        playerX -
+        homeX;
+
+
+    const dy =
+        playerY -
+        homeY;
+
+
+    const distance =
+        Math.sqrt(
+            dx*dx +
+            dy*dy
+        );
+
+
+    /*
+    Prevent calibration
+    if the player is obviously
+    far away from HOME.
+    */
+
+    if (
+
+        gamePhase ===
+        "return" &&
+
+        distance >
+        1.8
+
+    ) {
+
+        document
+            .getElementById(
+                "message"
+            )
+            .textContent =
+            "You are still too far from HOME. Move closer and jump again.";
+
+        beep(
+            300,
+            0.15
+        );
+
+        return;
+
+    }
+
+
+    /*
+    RESET POSITION.
+    */
+
+    playerX = 0;
+
+    playerY = 0;
+
+
+    homeX = 0;
+
+    homeY = 0;
+
+
+    stepCount = 0;
+
+
+    gameRunning =
+        false;
+
+
+    gamePhase =
+        "idle";
+
+
+    document
+        .getElementById(
+            "steps"
+        )
+        .textContent =
+        "0";
+
+
+    document
+        .getElementById(
+            "homeDistance"
+        )
+        .textContent =
+        "0.0m";
+
+
+    document
+        .getElementById(
+            "phase"
+        )
+        .textContent =
+        "HOME CALIBRATED";
+
+
+    document
+        .getElementById(
+            "message"
+        )
+        .textContent =
+        "✓ HOME reset. Ready for the next round.";
+
+
+    beep(
+        1000,
+        0.1
+    );
+
 
     setTimeout(
-        function() {
+        () => {
 
-            if (
-                lastBeta !== null &&
-                lastGamma !== null
-            ) {
-
-                completeCalibration();
-
-            }
-
-            else {
-
-                waitForSensorCalibration();
-
-            }
+            beep(
+                1400,
+                0.12
+            );
 
         },
         100
     );
 
-}
 
-
-/* =========================
-   COMPLETE CALIBRATION
-   ========================= */
-
-function completeCalibration() {
-
-    calibratedBeta =
-        lastBeta;
-
-
-    calibratedGamma =
-        lastGamma;
-
-
-    calBetaDisplay.textContent =
-        calibratedBeta.toFixed(1);
-
-
-    calGammaDisplay.textContent =
-        calibratedGamma.toFixed(1);
-
-
-    velocityX = 0;
-
-    velocityY = 0;
-
-
-    statusDisplay.textContent =
-        "Calibration complete. " +
-        "Press Start Game.";
-
-
-    startButton.disabled =
-        false;
+    vibrate(100);
 
 }
 
 
-/* =========================
-   MOVE TARGET
-   ========================= */
 
-function moveTarget() {
+/*
+==========================================================
+COMPASS
+==========================================================
+*/
 
-    const margin = 100;
+function updateCompass() {
 
+    if (
+        !headingAvailable
+    ) {
 
-    targetX =
-        margin +
-        Math.random() *
-        (
-            window.innerWidth -
-            margin * 2
-        );
+        return;
 
-
-    targetY =
-        margin +
-        Math.random() *
-        (
-            window.innerHeight -
-            margin * 2
-        );
+    }
 
 
-    target.style.left =
-        targetX + "px";
-
-
-    target.style.top =
-        targetY + "px";
-
-}
-
-
-/* =========================
-   COLLISION
-   ========================= */
-
-function checkCollision() {
+    /*
+    Vector from player
+    to target.
+    */
 
     const dx =
-        ballX -
-        targetX;
+        targetX -
+        playerX;
 
 
     const dy =
-        ballY -
-        targetY;
+        targetY -
+        playerY;
 
+
+    /*
+    Calculate absolute bearing.
+    */
+
+    const targetBearing =
+        normalize360(
+            degrees(
+                Math.atan2(
+                    dx,
+                    dy
+                )
+            )
+        );
+
+
+    /*
+    Convert to direction
+    relative to player's
+    current heading.
+    */
+
+    const relativeDirection =
+        normalize180(
+            targetBearing -
+            heading
+        );
+
+
+    /*
+    Rotate arrow.
+    */
+
+    document
+        .getElementById(
+            "targetArrow"
+        )
+        .style.transform =
+        "rotate(" +
+        relativeDirection +
+        "deg)";
+
+
+    /*
+    Label.
+    */
+
+    document
+        .getElementById(
+            "arrowLabel"
+        )
+        .textContent =
+        gamePhase === "return"
+            ? "HOME"
+            : "TARGET";
+
+
+    /*
+    Distance.
+    */
 
     const distance =
         Math.sqrt(
-            dx * dx +
-            dy * dy
+            dx*dx +
+            dy*dy
         );
 
 
     if (
-        distance <
-        catchDistance
+        gamePhase ===
+        "return"
     ) {
 
-        catchTarget();
+        document
+            .getElementById(
+                "targetInfo"
+            )
+            .textContent =
+            "HOME • approximately " +
+            distance.toFixed(1) +
+            " m away";
+
+    }
+
+    else {
+
+        document
+            .getElementById(
+                "targetInfo"
+            )
+            .textContent =
+            "Target: " +
+            targetSteps +
+            " steps • approximately " +
+            distance.toFixed(1) +
+            " m away";
 
     }
 
 }
 
 
-/* =========================
-   CATCH TARGET
-   ========================= */
 
-function catchTarget() {
+/*
+==========================================================
+DEBUG PANEL
+==========================================================
+*/
 
-    score++;
+function updateDebug() {
 
-
-    scoreDisplay.textContent =
-        "Score: " +
-        score;
-
-
-    velocityX = 0;
-
-    velocityY = 0;
+    const dx =
+        playerX -
+        homeX;
 
 
-    moveTarget();
+    const dy =
+        playerY -
+        homeY;
 
 
-    statusDisplay.textContent =
-        "CAUGHT! 🎯";
+    const homeDistance =
+        Math.sqrt(
+            dx*dx +
+            dy*dy
+        );
 
 
-    setTimeout(
-        function() {
+    const debugText =
 
-            if (
-                gameStarted
-            ) {
+`HEADING
+Current: ${
+    headingAvailable
+        ? heading.toFixed(1)
+        : "—"
+}°
 
-                statusDisplay.textContent =
-                    "Find the next target!";
+Reference: ${
+    headingReference.toFixed(1)
+}°
 
-            }
+POSITION
+X: ${playerX.toFixed(2)} m
+Y: ${playerY.toFixed(2)} m
 
-        },
-        700
-    );
+HOME DISTANCE
+${homeDistance.toFixed(2)} m
+
+ACCELERATION
+Magnitude:
+${accelerationMagnitude.toFixed(2)} m/s²
+
+Baseline:
+${accelerationBaseline.toFixed(2)} m/s²
+
+X:
+${lastAcceleration.x.toFixed(2)}
+
+Y:
+${lastAcceleration.y.toFixed(2)}
+
+Z:
+${lastAcceleration.z.toFixed(2)}
+
+ROTATION
+Alpha:
+${lastRotation.alpha.toFixed(1)} °/s
+
+Beta:
+${lastRotation.beta.toFixed(1)} °/s
+
+Gamma:
+${lastRotation.gamma.toFixed(1)} °/s
+
+STEPS
+${stepCount}
+
+GAME PHASE
+${gamePhase}
+
+JUMP STATE
+${jumpState}
+
+ORIENTATION
+Alpha:
+${lastOrientation.alpha ?? "—"}
+
+Beta:
+${lastOrientation.beta ?? "—"}
+
+Gamma:
+${lastOrientation.gamma ?? "—"}
+`;
+
+
+    document
+        .getElementById(
+            "debug"
+        )
+        .textContent =
+        debugText;
 
 }
 
 
-/* =========================
-   BALL PHYSICS
-   ========================= */
 
-function updateBall() {
-
-    ballX +=
-        velocityX;
-
-
-    ballY +=
-        velocityY;
-
-
-    velocityX *=
-        friction;
-
-
-    velocityY *=
-        friction;
-
-
-    /*
-     * Screen boundaries.
-     */
-
-    if (
-        ballX <
-        ballRadius
-    ) {
-
-        ballX =
-            ballRadius;
-
-        velocityX *=
-            -0.5;
-
-    }
-
-
-    if (
-        ballX >
-        window.innerWidth -
-        ballRadius
-    ) {
-
-        ballX =
-            window.innerWidth -
-            ballRadius;
-
-        velocityX *=
-            -0.5;
-
-    }
-
-
-    if (
-        ballY <
-        ballRadius
-    ) {
-
-        ballY =
-            ballRadius;
-
-        velocityY *=
-            -0.5;
-
-    }
-
-
-    if (
-        ballY >
-        window.innerHeight -
-        ballRadius
-    ) {
-
-        ballY =
-            window.innerHeight -
-            ballRadius;
-
-        velocityY *=
-            -0.5;
-
-    }
-
-
-    /*
-     * Display ball.
-
-     */
-
-    ball.style.left =
-        ballX + "px";
-
-
-    ball.style.top =
-        ballY + "px";
-
-
-    /*
-     * Debug values.
-
-     */
-
-    velocityXDisplay.textContent =
-        velocityX.toFixed(2);
-
-
-    velocityYDisplay.textContent =
-        velocityY.toFixed(2);
-
-
-    /*
-     * Collision.
-
-     */
-
-    checkCollision();
-
-}
-
-
-/* =========================
-   GAME LOOP
-   ========================= */
+/*
+==========================================================
+MAIN LOOP
+==========================================================
+*/
 
 function gameLoop() {
 
     if (
-        gameStarted
+
+        gamePhase ===
+        "target" ||
+
+        gamePhase ===
+        "return"
+
     ) {
 
-        updateBall();
+        updateCompass();
 
     }
+
+
+    updateDebug();
 
 
     requestAnimationFrame(
@@ -1375,154 +3003,193 @@ function gameLoop() {
 }
 
 
-gameLoop();
+
+/*
+==========================================================
+BUTTONS
+==========================================================
+*/
 
 
-/* =========================
-   CALIBRATE BUTTON
-   ========================= */
-
-calibrateButton.addEventListener(
-    "click",
-    function() {
-
-        calibrate();
-
-    }
-);
+document
+    .getElementById(
+        "enableSensors"
+    )
+    .addEventListener(
+        "click",
+        enableSensors
+    );
 
 
-/* =========================
-   START GAME
-   ========================= */
+document
+    .getElementById(
+        "calibrateHome"
+    )
+    .addEventListener(
+        "click",
+        calibrateHome
+    );
 
-startButton.addEventListener(
-    "click",
-    async function() {
 
-        /*
-         * Calibration required.
-         */
+document
+    .getElementById(
+        "startGame"
+    )
+    .addEventListener(
+        "click",
+        startGame
+    );
 
-        if (
-            calibratedBeta === null ||
-            calibratedGamma === null
-        ) {
 
-            statusDisplay.textContent =
-                "Please calibrate first.";
+document
+    .getElementById(
+        "jumpCalibration"
+    )
+    .addEventListener(
+        "click",
+        confirmHomeJump
+    );
 
-            return;
+
+document
+    .getElementById(
+        "debugButton"
+    )
+    .addEventListener(
+        "click",
+        function() {
+
+            debugVisible =
+                !debugVisible;
+
+
+            document
+                .getElementById(
+                    "debug"
+                )
+                .style.display =
+                debugVisible
+                    ? "block"
+                    : "none";
+
+
+            this.textContent =
+                debugVisible
+                    ? "Hide Sensor Debug"
+                    : "Show Sensor Debug";
 
         }
+    );
 
 
-        /*
-         * Start camera.
-         */
+document
+    .getElementById(
+        "resetGame"
+    )
+    .addEventListener(
+        "click",
+        function() {
 
-        const cameraStarted =
-            await startCamera();
+            gameRunning =
+                false;
+
+            gamePhase =
+                "idle";
 
 
-        if (
-            !cameraStarted
-        ) {
+            score =
+                0;
 
-            return;
+            round =
+                0;
+
+            stepCount =
+                0;
+
+
+            playerX =
+                0;
+
+            playerY =
+                0;
+
+
+            targetX =
+                0;
+
+            targetY =
+                0;
+
+
+            document
+                .getElementById(
+                    "score"
+                )
+                .textContent =
+                "0";
+
+
+            document
+                .getElementById(
+                    "round"
+                )
+                .textContent =
+                "0";
+
+
+            document
+                .getElementById(
+                    "steps"
+                )
+                .textContent =
+                "0";
+
+
+            document
+                .getElementById(
+                    "homeDistance"
+                )
+                .textContent =
+                "0.0m";
+
+
+            document
+                .getElementById(
+                    "phase"
+                )
+                .textContent =
+                "READY";
+
+
+            document
+                .getElementById(
+                    "message"
+                )
+                .textContent =
+                "Reset. Calibrate HOME to begin.";
+
+
+            document
+                .getElementById(
+                    "targetInfo"
+                )
+                .textContent =
+                "Target: —";
 
         }
+    );
 
-
-        /*
-         * Reset ball.
-
-         */
-
-        ballX =
-            window.innerWidth / 2;
-
-        ballY =
-            window.innerHeight / 2;
-
-
-        velocityX = 0;
-
-        velocityY = 0;
-
-
-        /*
-         * Reset score.
-
-         */
-
-        score = 0;
-
-        scoreDisplay.textContent =
-            "Score: 0";
-
-
-        /*
-         * New target.
-
-         */
-
-        moveTarget();
-
-
-        /*
-         * Start game.
-
-         */
-
-        gameStarted =
-            true;
-
-
-        statusDisplay.textContent =
-            "Find the target!";
-
-
-        /*
-         * Disable buttons.
-
-         */
-
-        calibrateButton.disabled =
-            true;
-
-        startButton.disabled =
-            true;
-
-    }
-);
-
-
-/* =========================
-   INITIAL POSITION
-   ========================= */
-
-ball.style.left =
-    ballX + "px";
-
-
-ball.style.top =
-    ballY + "px";
-
-
-moveTarget();
 
 
 /*
- * Start Game initially disabled.
- */
+==========================================================
+START LOOP
+==========================================================
+*/
 
-startButton.disabled =
-    true;
-
+gameLoop();
 
 </script>
 
 </body>
-
 </html>
